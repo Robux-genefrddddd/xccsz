@@ -33,9 +33,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initTheme = async () => {
       const stored = localStorage.getItem("darkMode");
-      let theme = isDark;
+      let theme = stored !== null ? JSON.parse(stored) : true; // Default to dark mode
 
-      // If no localStorage, check Firestore
+      // If no localStorage and user logged in, check Firestore
       if (stored === null && user?.uid) {
         try {
           const userDoc = await import("firebase/firestore").then(
@@ -47,8 +47,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         } catch (error) {
           console.error("Error loading theme from Firestore:", error);
         }
-      } else if (stored !== null) {
-        theme = JSON.parse(stored);
       }
 
       setIsDark(theme);
