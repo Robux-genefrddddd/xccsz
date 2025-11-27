@@ -78,10 +78,7 @@ export function ChatArea({ conversationId }: ChatAreaProps) {
     if (!textareaRef.current) return;
     textareaRef.current.style.height = `${AUTO_RESIZE_CONFIG.minHeight}px`;
     const scrollHeight = textareaRef.current.scrollHeight;
-    const newHeight = Math.min(
-      scrollHeight,
-      AUTO_RESIZE_CONFIG.maxHeight,
-    );
+    const newHeight = Math.min(scrollHeight, AUTO_RESIZE_CONFIG.maxHeight);
     textareaRef.current.style.height = `${newHeight}px`;
   };
 
@@ -169,7 +166,13 @@ export function ChatArea({ conversationId }: ChatAreaProps) {
 
   // Handle saving message to Firebase when typing is complete
   useEffect(() => {
-    if (!isTyping && fullText && conversationId && user && chatMessages.length > 0) {
+    if (
+      !isTyping &&
+      fullText &&
+      conversationId &&
+      user &&
+      chatMessages.length > 0
+    ) {
       const lastMessage = chatMessages[chatMessages.length - 1];
       if (lastMessage.role === "assistant" && lastMessage.content === "") {
         const saveMessage = async () => {
@@ -177,7 +180,10 @@ export function ChatArea({ conversationId }: ChatAreaProps) {
             // Update the last message with the full typed text
             setChatMessages((prev) => {
               const updated = [...prev];
-              if (updated.length > 0 && updated[updated.length - 1].role === "assistant") {
+              if (
+                updated.length > 0 &&
+                updated[updated.length - 1].role === "assistant"
+              ) {
                 updated[updated.length - 1].content = fullText;
               }
               return updated;
@@ -464,75 +470,78 @@ export function ChatArea({ conversationId }: ChatAreaProps) {
             <div className="space-y-3 pb-4">
               {chatMessages.map((msg, index) => {
                 const isLastMessage = index === chatMessages.length - 1;
-                const displayContent = isLastMessage && isTyping ? typingText : msg.content;
+                const displayContent =
+                  isLastMessage && isTyping ? typingText : msg.content;
 
                 return (
-                <div
-                  key={msg.id}
-                  className={`flex w-full ${
-                    msg.role === "user" ? "justify-end" : "justify-start"
-                  } animate-springFade`}
-                >
-                  {msg.role === "user" ? (
-                    <div className="flex gap-2 items-start flex-row-reverse max-w-lg">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-md border border-blue-400/50 overflow-hidden">
-                        {userData?.profilePhotoURL ? (
-                          <img
-                            src={userData.profilePhotoURL}
-                            alt={user?.displayName || "User"}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : user?.photoURL ? (
-                          <img
-                            src={user.photoURL}
-                            alt={user.displayName || "User"}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
+                  <div
+                    key={msg.id}
+                    className={`flex w-full ${
+                      msg.role === "user" ? "justify-end" : "justify-start"
+                    } animate-springFade`}
+                  >
+                    {msg.role === "user" ? (
+                      <div className="flex gap-2 items-start flex-row-reverse max-w-lg">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-md border border-blue-400/50 overflow-hidden">
+                          {userData?.profilePhotoURL ? (
+                            <img
+                              src={userData.profilePhotoURL}
+                              alt={user?.displayName || "User"}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : user?.photoURL ? (
+                            <img
+                              src={user.photoURL}
+                              alt={user.displayName || "User"}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-xs font-bold text-white">
+                              {user?.displayName?.[0]?.toUpperCase() || "U"}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 max-w-md max-h-96 overflow-y-auto">
+                          <div
+                            className="rounded-2xl rounded-tr-none px-4 py-3 text-white/95 text-sm leading-[1.55] break-words"
+                            style={{
+                              background:
+                                "linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%)",
+                              boxShadow: "0 4px 16px rgba(0, 0, 0, 0.3)",
+                            }}
+                          >
+                            <MessageRenderer
+                              content={msg.content}
+                              role={msg.role}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2 items-start max-w-lg">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-md border border-orange-400/50">
                           <span className="text-xs font-bold text-white">
-                            {user?.displayName?.[0]?.toUpperCase() || "U"}
+                            V
                           </span>
-                        )}
-                      </div>
-                      <div className="flex-1 max-w-md max-h-96 overflow-y-auto">
-                        <div
-                          className="rounded-2xl rounded-tr-none px-4 py-3 text-white/95 text-sm leading-[1.55] break-words"
-                          style={{
-                            background:
-                              "linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%)",
-                            boxShadow: "0 4px 16px rgba(0, 0, 0, 0.3)",
-                          }}
-                        >
-                          <MessageRenderer
-                            content={msg.content}
-                            role={msg.role}
-                          />
+                        </div>
+                        <div className="flex-1 max-w-md max-h-96 overflow-y-auto">
+                          <div
+                            className="rounded-2xl rounded-tl-none px-4 py-3 text-white/90 text-sm leading-[1.55] break-words"
+                            style={{
+                              backgroundColor: "#111418",
+                              border: "1px solid rgba(255, 255, 255, 0.08)",
+                              boxShadow: "0 4px 16px rgba(0, 0, 0, 0.3)",
+                            }}
+                          >
+                            <MessageRenderer
+                              content={displayContent}
+                              role={msg.role}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2 items-start max-w-lg">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-md border border-orange-400/50">
-                        <span className="text-xs font-bold text-white">V</span>
-                      </div>
-                      <div className="flex-1 max-w-md max-h-96 overflow-y-auto">
-                        <div
-                          className="rounded-2xl rounded-tl-none px-4 py-3 text-white/90 text-sm leading-[1.55] break-words"
-                          style={{
-                            backgroundColor: "#111418",
-                            border: "1px solid rgba(255, 255, 255, 0.08)",
-                            boxShadow: "0 4px 16px rgba(0, 0, 0, 0.3)",
-                          }}
-                        >
-                          <MessageRenderer
-                            content={displayContent}
-                            role={msg.role}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
                 );
               })}
               {(loading || isThinking || isTyping) && (
