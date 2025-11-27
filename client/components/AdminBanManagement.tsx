@@ -139,9 +139,6 @@ export default function AdminBanManagement({ users }: AdminBanManagementProps) {
     return result;
   }, [bans, filterType, showExpired, userSearchQuery]);
 
-  const filteredIPBans = useMemo(() => {
-    return ipBans.filter((ban) => ban.ipAddress.includes(ipSearchQuery));
-  }, [ipBans, ipSearchQuery]);
 
   const isExpired = (ban: UserBan) => {
     return ban.expiresAt && ban.expiresAt.toDate() < new Date();
