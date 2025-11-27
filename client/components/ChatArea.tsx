@@ -407,13 +407,13 @@ export function ChatArea({ conversationId }: ChatAreaProps) {
         const assistantMsg: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: "", // Will be filled by typewriter effect
+          content: "", // Will be filled by block rendering
           timestamp: Date.now(),
         };
         setChatMessages((prev) => [...prev, assistantMsg]);
 
-        // Start typewriter effect
-        startTypewriterEffect(assistantContent);
+        // Start block rendering with premium animation
+        startBlockRendering(assistantContent);
       }
 
       // Update message count in Firebase
