@@ -7,11 +7,12 @@ import { PlanType, UserData } from "@/contexts/AuthContext";
 import { Mail, Lock, Key } from "lucide-react";
 import { toast } from "sonner";
 import { IPService } from "@/lib/ip-service";
+import TOSModal from "@/components/TOSModal";
 
 interface CaptchaData {
   num1: number;
   num2: number;
-  operator: "+" | "-";
+  operator: "+";
   answer: number;
 }
 
