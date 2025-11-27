@@ -15,6 +15,13 @@ import {
   handleDeleteUser,
 } from "./routes/admin";
 import {
+  handleCheckIPBan,
+  handleCheckIPLimit,
+  handleRecordUserIP,
+  handleUpdateUserIPLogin,
+} from "./routes/ip-management";
+import { handleGetAIConfig, handleUpdateAIConfig } from "./routes/settings";
+import {
   validateContentType,
   validateRequestSize,
   validateInput,
@@ -71,38 +78,52 @@ export function createServer() {
   // 7. Rate limiting (general limit, stricter on admin routes)
   app.use(rateLimit(60000, 100)); // 100 requests per minute per IP
 
+  // Create API router to handle all API routes
+  const apiRouter = express.Router();
+
   // Example API routes
-  app.get("/api/ping", (_req, res) => {
+  apiRouter.get("/ping", (_req, res) => {
     const ping = process.env.PING_MESSAGE ?? "ping";
     res.json({ message: ping });
   });
 
-  app.get("/api/demo", handleDemo);
+  apiRouter.get("/demo", handleDemo);
 
   // IP detection routes
-  app.get("/api/get-ip", handleGetIP);
-  app.post("/api/check-vpn", handleCheckVPN);
+  apiRouter.get("/get-ip", handleGetIP);
+  apiRouter.post("/check-vpn", handleCheckVPN);
+
+  // IP management routes
+  apiRouter.post("/check-ip-ban", handleCheckIPBan);
+  apiRouter.post("/check-ip-limit", handleCheckIPLimit);
+  apiRouter.post("/record-user-ip", handleRecordUserIP);
+  apiRouter.post("/update-user-ip-login", handleUpdateUserIPLogin);
 
   // License activation route
-  app.post("/api/activate-license", handleActivateLicense);
+  apiRouter.post("/activate-license", handleActivateLicense);
 
   // Daily reset route
-  app.post("/api/daily-reset", handleDailyReset);
+  apiRouter.post("/daily-reset", handleDailyReset);
 
   // AI chat route
-  app.post("/api/ai/chat", handleAIChat);
+  apiRouter.post("/ai/chat", handleAIChat);
+  apiRouter.get("/ai/config", handleGetAIConfig);
+  apiRouter.put("/ai/config", handleUpdateAIConfig);
 
   // Admin routes (require authentication + stricter rate limiting)
   const adminRateLimit = rateLimit(60000, 10); // 10 requests per minute per IP
-  app.post("/api/admin/verify", adminRateLimit, handleVerifyAdmin);
-  app.post("/api/admin/ban-user", adminRateLimit, handleBanUser);
-  app.post("/api/admin/ban-ip", adminRateLimit, handleBanIP);
-  app.post("/api/admin/delete-user", adminRateLimit, handleDeleteUser);
-  app.get("/api/admin/users", adminRateLimit, handleGetAllUsers);
-  app.post("/api/admin/create-license", adminRateLimit, handleCreateLicense);
+  apiRouter.post("/admin/verify", adminRateLimit, handleVerifyAdmin);
+  apiRouter.post("/admin/ban-user", adminRateLimit, handleBanUser);
+  apiRouter.post("/admin/ban-ip", adminRateLimit, handleBanIP);
+  apiRouter.post("/admin/delete-user", adminRateLimit, handleDeleteUser);
+  apiRouter.get("/admin/users", adminRateLimit, handleGetAllUsers);
+  apiRouter.post("/admin/create-license", adminRateLimit, handleCreateLicense);
 
-  // 404 handler
-  app.use((_req, res) => {
+  // Mount API router
+  app.use("/api", apiRouter);
+
+  // 404 handler for API routes only
+  app.use("/api", (_req, res) => {
     res.status(404).json({ error: "Not found" });
   });
 

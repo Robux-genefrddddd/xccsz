@@ -6,6 +6,8 @@ import {
 } from "@/components/ui/dialog";
 import { useState } from "react";
 import { Moon, Bell, Lock, Volume2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { ProfilePhotoUpload } from "@/components/ProfilePhotoUpload";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -13,6 +15,7 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onOpenChange }: SettingsModalProps) {
+  const { user, userData } = useAuth();
   const [settings, setSettings] = useState({
     darkMode: true,
     notifications: true,
@@ -42,6 +45,22 @@ export function SettingsModal({ isOpen, onOpenChange }: SettingsModalProps) {
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
+          {/* Profile Photo Upload */}
+          {user?.uid && (
+            <>
+              <ProfilePhotoUpload
+                userId={user.uid}
+                currentPhotoUrl={
+                  userData?.profilePhotoURL || user.photoURL || undefined
+                }
+                displayName={
+                  userData?.displayName || user.displayName || "User"
+                }
+              />
+              <div className="h-px bg-white/10"></div>
+            </>
+          )}
+
           {/* Dark Mode */}
           <div className="flex items-center justify-between p-3 hover:bg-white/5 rounded-lg transition-colors">
             <div className="flex items-center gap-3">

@@ -1,34 +1,21 @@
-import {
-  collection,
-  doc,
-  getDocs,
-  setDoc,
-  deleteDoc,
-  query,
-  where,
-  Timestamp,
-  updateDoc,
-} from "firebase/firestore";
-import { db } from "./firebase";
-
 export interface UserIP {
   id: string;
   userId: string;
-  email: string;
+  email?: string;
   ipAddress: string;
-  lastLogin: Timestamp;
-  createdAt: Timestamp;
+  lastLogin?: number;
+  createdAt?: number;
   isVPN?: boolean;
   vpnProvider?: string;
 }
 
 export interface IPBan {
-  id: string;
+  id?: string;
   ipAddress: string;
   reason: string;
-  bannedAt: Timestamp;
-  expiresAt?: Timestamp;
-  isPermanent: boolean;
+  bannedAt?: any;
+  expiresAt?: any;
+  isPermanent?: boolean;
 }
 
 export class IPService {
@@ -78,25 +65,15 @@ export class IPService {
     ipAddress: string,
   ): Promise<void> {
     try {
-      const vpcCheck = await this.checkVPN(ipAddress);
+      const response = await fetch("/api/record-user-ip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, email, ipAddress }),
+      });
 
-      const ipRef = doc(collection(db, "user_ips"));
-      const now = Timestamp.now();
-
-      const ipData: any = {
-        userId,
-        email,
-        ipAddress,
-        lastLogin: now,
-        createdAt: now,
-        isVPN: vpcCheck.isVPN,
-      };
-
-      if (vpcCheck.provider) {
-        ipData.vpnProvider = vpcCheck.provider;
+      if (!response.ok) {
+        throw new Error("Failed to record user IP");
       }
-
-      await setDoc(ipRef, ipData as UserIP);
 
       await this.checkIPLimit(ipAddress);
     } catch (error) {
@@ -116,22 +93,22 @@ export class IPService {
     }
 
     try {
-      const q = query(
-        collection(db, "user_ips"),
-        where("userId", "==", userId),
-        where("ipAddress", "==", ipAddress),
-      );
+      const response = await fetch("/api/update-user-ip-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, ipAddress }),
+      });
 
-      const snapshot = await getDocs(q);
-
-      if (!snapshot.empty) {
-        const docRef = snapshot.docs[0].ref;
-        await updateDoc(docRef, {
-          lastLogin: Timestamp.now(),
-        });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.error ||
+            `Failed to update user IP login: ${response.status}`,
+        );
       }
     } catch (error) {
       console.error("Error updating user IP login:", error);
+      // Non-critical operation - don't block login
     }
   }
 
@@ -141,111 +118,45 @@ export class IPService {
   ): Promise<{
     isLimitExceeded: boolean;
     accountCount: number;
-    accounts: UserIP[];
+    maxAccounts: number;
   }> {
     if (!ipAddress) {
       console.warn("checkIPLimit called with undefined ipAddress");
       return {
         isLimitExceeded: false,
         accountCount: 0,
-        accounts: [],
+        maxAccounts: maxAccountsPerIP,
       };
     }
 
     try {
-      const q = query(
-        collection(db, "user_ips"),
-        where("ipAddress", "==", ipAddress),
-      );
+      const response = await fetch("/api/check-ip-limit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ipAddress, maxAccounts: maxAccountsPerIP }),
+      });
 
-      const snapshot = await getDocs(q);
-      const accounts = snapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() }) as UserIP,
-      );
+      if (!response.ok) {
+        return {
+          isLimitExceeded: false,
+          accountCount: 0,
+          maxAccounts: maxAccountsPerIP,
+        };
+      }
 
+      const data = await response.json();
       return {
-        isLimitExceeded: accounts.length > maxAccountsPerIP,
-        accountCount: accounts.length,
-        accounts,
+        isLimitExceeded: data.isLimitExceeded,
+        accountCount: data.accountCount,
+        maxAccounts: data.maxAccounts,
       };
     } catch (error) {
       console.error("Error checking IP limit:", error);
       return {
         isLimitExceeded: false,
         accountCount: 0,
-        accounts: [],
+        maxAccounts: maxAccountsPerIP,
       };
-    }
-  }
-
-  static async getAccountsFromIP(ipAddress: string): Promise<UserIP[]> {
-    if (!ipAddress) {
-      console.warn("getAccountsFromIP called with undefined ipAddress");
-      return [];
-    }
-
-    try {
-      const q = query(
-        collection(db, "user_ips"),
-        where("ipAddress", "==", ipAddress),
-      );
-
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() }) as UserIP,
-      );
-    } catch (error) {
-      console.error("Error getting accounts from IP:", error);
-      return [];
-    }
-  }
-
-  static async banIP(
-    ipAddress: string,
-    reason: string,
-    durationMinutes?: number,
-  ): Promise<void> {
-    if (!ipAddress || !reason) {
-      throw new Error("Missing required fields: ipAddress or reason");
-    }
-
-    try {
-      const banRef = doc(collection(db, "ip_bans"));
-      const bannedAt = Timestamp.now();
-
-      const banData: any = {
-        ipAddress,
-        reason,
-        bannedAt,
-        isPermanent: !durationMinutes,
-      };
-
-      if (durationMinutes) {
-        banData.expiresAt = Timestamp.fromDate(
-          new Date(bannedAt.toDate().getTime() + durationMinutes * 60000),
-        );
-      }
-
-      await setDoc(banRef, banData as IPBan);
-    } catch (error) {
-      console.error("Error banning IP:", error);
-      throw error;
-    }
-  }
-
-  static async unbanIP(ipAddress: string): Promise<void> {
-    try {
-      const q = query(
-        collection(db, "ip_bans"),
-        where("ipAddress", "==", ipAddress),
-      );
-      const snapshot = await getDocs(q);
-
-      for (const doc_ of snapshot.docs) {
-        await deleteDoc(doc_.ref);
-      }
-    } catch (error) {
-      console.error("Error unbanning IP:", error);
     }
   }
 
@@ -256,71 +167,30 @@ export class IPService {
     }
 
     try {
-      const q = query(
-        collection(db, "ip_bans"),
-        where("ipAddress", "==", ipAddress),
-      );
-      const snapshot = await getDocs(q);
+      const response = await fetch("/api/check-ip-ban", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ipAddress }),
+      });
 
-      if (snapshot.empty) return null;
-
-      const banDoc = snapshot.docs[0];
-      const ban = { id: banDoc.id, ...banDoc.data() } as IPBan;
-
-      if (ban.expiresAt && ban.expiresAt.toDate() < new Date()) {
-        await deleteDoc(banDoc.ref);
+      if (!response.ok) {
         return null;
       }
 
-      return ban;
+      const data = await response.json();
+      if (!data.banned) {
+        return null;
+      }
+
+      return {
+        ipAddress,
+        reason: data.reason,
+        expiresAt: data.expiresAt,
+        isPermanent: !data.expiresAt,
+      };
     } catch (error) {
       console.error("Error checking IP ban:", error);
       return null;
-    }
-  }
-
-  static async getAllIPBans(): Promise<IPBan[]> {
-    try {
-      const snapshot = await getDocs(collection(db, "ip_bans"));
-      const bans: IPBan[] = [];
-
-      for (const doc_ of snapshot.docs) {
-        const ban = { id: doc_.id, ...doc_.data() } as IPBan;
-
-        if (ban.expiresAt && ban.expiresAt.toDate() < new Date()) {
-          await deleteDoc(doc_.ref);
-          continue;
-        }
-
-        bans.push(ban);
-      }
-
-      return bans;
-    } catch (error) {
-      console.error("Error getting all IP bans:", error);
-      return [];
-    }
-  }
-
-  static async getUserIPs(userId: string): Promise<UserIP[]> {
-    if (!userId) {
-      console.warn("getUserIPs called with undefined userId");
-      return [];
-    }
-
-    try {
-      const q = query(
-        collection(db, "user_ips"),
-        where("userId", "==", userId),
-      );
-
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() }) as UserIP,
-      );
-    } catch (error) {
-      console.error("Error getting user IPs:", error);
-      return [];
     }
   }
 }

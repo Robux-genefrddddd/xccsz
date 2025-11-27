@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { IPService } from "@/lib/ip-service";
 
@@ -83,7 +83,7 @@ export default function Login() {
           } else if (firebaseError.message.includes("INVALID_EMAIL")) {
             message = "Email invalide";
           } else if (firebaseError.message.includes("USER_DISABLED")) {
-            message = "Ce compte a été d��sactivé";
+            message = "Ce compte a été désactivé";
           } else {
             message = firebaseError.message;
           }
@@ -110,8 +110,13 @@ export default function Login() {
       <div className="relative w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8 animate-fadeIn">
+          <div className="flex justify-center mb-4">
+            <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center border-2 border-white/30">
+              <LogIn size={24} className="text-white" />
+            </div>
+          </div>
           <h1 className="text-3xl font-bold text-white mb-2">Bienvenue</h1>
-          <p className="text-foreground/60">Connectez-vous �� votre compte</p>
+          <p className="text-foreground/60">Connectez-vous à votre compte</p>
         </div>
 
         {/* Form */}
@@ -168,15 +173,8 @@ export default function Login() {
           </button>
         </form>
 
-        {/* Divider */}
-        <div className="flex items-center gap-3 my-6">
-          <div className="flex-1 h-px bg-white/10" />
-          <span className="text-foreground/50 text-sm">ou</span>
-          <div className="flex-1 h-px bg-white/10" />
-        </div>
-
         {/* Register Link */}
-        <div className="text-center">
+        <div className="text-center mt-8">
           <p className="text-foreground/60 text-sm mb-3">
             Pas encore de compte?
           </p>

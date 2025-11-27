@@ -30,6 +30,9 @@ export interface UserData {
   licenseKey?: string;
   licenseExpiresAt?: number;
   lastMessageReset?: number;
+  profilePhotoURL?: string;
+  disclaimerAccepted?: boolean;
+  disclaimerAcceptedAt?: number;
 }
 
 interface AuthContextType {
