@@ -127,22 +127,8 @@ export default function Login() {
 
       {/* Main Content Container */}
       <div className="relative z-10 w-full max-w-[460px]">
-        {/* Header Section with Logo and Title */}
+        {/* Header Section with Title */}
         <div className="text-center mb-8 animate-fadeIn">
-          {/* Logo - Minimalist Circle Neon Soft */}
-          <div className="flex justify-center mb-6">
-            <div
-              className="w-14 h-14 rounded-full flex items-center justify-center font-bold text-xl relative"
-              style={{
-                background: "rgba(59, 130, 246, 0.1)",
-                border: "2px solid rgba(59, 130, 246, 0.4)",
-                boxShadow: "0 0 16px rgba(59, 130, 246, 0.2)",
-              }}
-            >
-              <span className="text-blue-400">VA</span>
-            </div>
-          </div>
-
           {/* Main Title */}
           <h1
             className="text-[28px] font-semibold text-white mb-3"
