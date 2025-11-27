@@ -142,14 +142,26 @@ export function ChatArea({ conversationId }: ChatAreaProps) {
     }
   }, [conversationId, user?.uid]);
 
-  // Cleanup typing interval on unmount
+  // Cleanup typing interval on unmount and conversation change
   useEffect(() => {
     return () => {
       if (typingIntervalRef.current) {
-        clearInterval(typingIntervalRef.current);
+        clearTimeout(typingIntervalRef.current);
+        typingIntervalRef.current = null;
       }
     };
   }, []);
+
+  // Reset typing state when conversation changes
+  useEffect(() => {
+    if (typingIntervalRef.current) {
+      clearTimeout(typingIntervalRef.current);
+      typingIntervalRef.current = null;
+    }
+    setIsTyping(false);
+    setTypingText("");
+    setFullText("");
+  }, [conversationId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
