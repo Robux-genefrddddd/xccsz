@@ -453,11 +453,11 @@ export function ChatArea({ conversationId }: ChatAreaProps) {
       <div className="flex-1 overflow-y-auto flex flex-col px-6 md:px-8 py-6 animate-fadeIn min-h-0 items-center transition-colors duration-300">
         <div className="w-full max-w-2xl">
           {!conversationId ? (
-            <div className="flex h-full items-center justify-center">
+            <div className="flex h-full items-center justify-center" style={{ paddingTop: "8%" }}>
               <div className="text-center">
                 <div
-                  className={`w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center border-2 animate-scaleIn transition-colors duration-300 ${
-                    isDark ? "border-foreground/20" : "border-[#3F3F3F]/20"
+                  className={`w-24 h-24 rounded-full mx-auto mb-8 flex items-center justify-center border-2 animate-scaleIn animate-haloPulse transition-all duration-300 ${
+                    isDark ? "border-orange-400/30" : "border-orange-300/40"
                   }`}
                   style={{
                     backgroundImage:
@@ -465,20 +465,31 @@ export function ChatArea({ conversationId }: ChatAreaProps) {
                     backgroundRepeat: "no-repeat",
                     backgroundPosition: "center",
                     backgroundSize: "cover",
+                    boxShadow: isDark
+                      ? "0 0 24px rgba(255, 200, 100, 0.15), inset 0 0 24px rgba(255, 200, 100, 0.05)"
+                      : "0 0 20px rgba(255, 150, 80, 0.12), inset 0 0 20px rgba(255, 150, 80, 0.04)",
                   }}
                 />
                 <h2
-                  className={`text-lg font-semibold mb-2 animate-slideUp transition-colors duration-300 ${
+                  className={`text-xl font-semibold mb-3 animate-slideUp transition-all duration-300 ${
                     isDark ? "text-foreground" : "text-[#1A1A1A]"
                   }`}
+                  style={{
+                    textShadow: isDark
+                      ? "0 2px 8px rgba(0,0,0,0.3)"
+                      : "0 1px 4px rgba(0,0,0,0.08)",
+                  }}
                 >
                   Sélectionnez une conversation
                 </h2>
                 <p
-                  className={`text-sm animate-slideUp transition-colors duration-300 ${
+                  className={`text-sm animate-slideUp transition-all duration-300 ${
                     isDark ? "text-foreground/60" : "text-[#3F3F3F]/60"
                   }`}
-                  style={{ animationDelay: "0.1s" }}
+                  style={{
+                    animationDelay: "0.1s",
+                    letterSpacing: "0.2px",
+                  }}
                 >
                   Cliquez sur une conversation à gauche pour commencer
                 </p>
@@ -493,11 +504,11 @@ export function ChatArea({ conversationId }: ChatAreaProps) {
               />
             </div>
           ) : chatMessages.length === 0 ? (
-            <div className="flex h-full items-center justify-center">
+            <div className="flex h-full items-center justify-center" style={{ paddingTop: "8%" }}>
               <div className="text-center">
                 <div
-                  className={`w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center border-2 animate-scaleIn transition-colors duration-300 ${
-                    isDark ? "border-foreground/20" : "border-[#3F3F3F]/20"
+                  className={`w-24 h-24 rounded-full mx-auto mb-8 flex items-center justify-center border-2 animate-scaleIn animate-haloPulse transition-all duration-300 ${
+                    isDark ? "border-orange-400/30" : "border-orange-300/40"
                   }`}
                   style={{
                     backgroundImage:
@@ -505,20 +516,31 @@ export function ChatArea({ conversationId }: ChatAreaProps) {
                     backgroundRepeat: "no-repeat",
                     backgroundPosition: "center",
                     backgroundSize: "cover",
+                    boxShadow: isDark
+                      ? "0 0 24px rgba(255, 200, 100, 0.15), inset 0 0 24px rgba(255, 200, 100, 0.05)"
+                      : "0 0 20px rgba(255, 150, 80, 0.12), inset 0 0 20px rgba(255, 150, 80, 0.04)",
                   }}
                 />
                 <h2
-                  className={`text-lg font-semibold mb-2 animate-slideUp transition-colors duration-300 ${
+                  className={`text-xl font-semibold mb-3 animate-slideUp transition-all duration-300 ${
                     isDark ? "text-foreground" : "text-[#1A1A1A]"
                   }`}
+                  style={{
+                    textShadow: isDark
+                      ? "0 2px 8px rgba(0,0,0,0.3)"
+                      : "0 1px 4px rgba(0,0,0,0.08)",
+                  }}
                 >
                   Commencez une conversation
                 </h2>
                 <p
-                  className={`text-sm animate-slideUp transition-colors duration-300 ${
+                  className={`text-sm animate-slideUp transition-all duration-300 ${
                     isDark ? "text-foreground/60" : "text-[#3F3F3F]/60"
                   }`}
-                  style={{ animationDelay: "0.1s" }}
+                  style={{
+                    animationDelay: "0.1s",
+                    letterSpacing: "0.2px",
+                  }}
                 >
                   Tapez un message ci-dessous pour commencer
                 </p>
