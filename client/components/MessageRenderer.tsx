@@ -1,5 +1,6 @@
 import { Copy, Check } from "lucide-react";
 import { useState, ReactNode } from "react";
+import { escapeHtml } from "@/lib/security";
 
 interface MessageRendererProps {
   content: string;
