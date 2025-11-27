@@ -236,10 +236,10 @@ export function Sidebar({
                 </p>
               </div>
             </button>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               <button
                 onClick={onClose}
-                className="p-1.5 hover:bg-white/10 rounded-lg transition-all text-muted-foreground hover:text-foreground flex-shrink-0"
+                className="p-1.5 hover:bg-white/[0.08] rounded-lg transition-all text-foreground/60 hover:text-foreground flex-shrink-0 hover:-translate-y-0.5"
                 aria-label="Close"
                 title="Close"
               >
@@ -247,11 +247,11 @@ export function Sidebar({
               </button>
               <Popover open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                 <PopoverTrigger asChild>
-                  <button className="p-1.5 hover:bg-white/10 rounded-lg transition-all text-muted-foreground hover:text-foreground flex-shrink-0">
-                    <MoreVertical size={14} />
+                  <button className="p-1.5 hover:bg-white/[0.08] rounded-lg transition-all text-foreground/60 hover:text-foreground flex-shrink-0 hover:-translate-y-0.5">
+                    <MoreVertical size={16} />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-36 p-2 bg-card border border-white/[0.1] rounded-lg">
+                <PopoverContent className="w-40 p-1.5 bg-card border border-white/[0.1] rounded-lg shadow-lg">
                   <div className="space-y-1">
                     <button
                       onClick={() => {
