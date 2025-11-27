@@ -20,6 +20,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+const AUTO_RESIZE_CONFIG = {
+  minHeight: 48,
+  maxHeight: 200,
+};
+
 const EMOJIS = [
   "😀",
   "😂",
