@@ -1,13 +1,13 @@
+import { auth } from "@/lib/firebase";
+
 export interface AIConfig {
   model: string;
-  systemPrompt: string;
   temperature: number;
   maxTokens: number;
 }
 
 const DEFAULT_CONFIG: AIConfig = {
   model: "x-ai/grok-4.1-fast:free",
-  systemPrompt: "Tu es un assistant utile et amical. Réponds en français.",
   temperature: 0.7,
   maxTokens: 2048,
 };
@@ -29,10 +29,18 @@ export class AIService {
 
   static async updateConfig(config: Partial<AIConfig>): Promise<void> {
     try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) {
+        throw new Error("Not authenticated");
+      }
+
       const response = await fetch("/api/ai/config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
+        body: JSON.stringify({
+          idToken,
+          ...config,
+        }),
       });
 
       if (!response.ok) {
@@ -50,18 +58,24 @@ export class AIService {
     const config = await this.getConfig();
 
     try {
+      // Get current user's ID token
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) {
+        throw new Error("Not authenticated. Please log in again.");
+      }
+
       const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          idToken,
           userMessage,
           conversationHistory,
           model: config.model,
           temperature: config.temperature,
           maxTokens: config.maxTokens,
-          systemPrompt: config.systemPrompt,
         }),
       });
 

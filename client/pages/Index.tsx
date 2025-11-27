@@ -170,15 +170,30 @@ export default function Index() {
       <div className="flex-1 flex flex-col">
         {/* Header with Menu Button */}
         <div
-          className={`border-b px-3 py-2 flex items-center justify-between backdrop-blur-sm transition-all duration-300 ${
+          className={`border-b px-3 py-2 flex items-center justify-between backdrop-blur-sm transition-all duration-300 relative ${
             isDark
-              ? "border-white/10 bg-background/50"
-              : "border-black/[0.08] bg-[#F3F4F6]/50"
+              ? "border-white/10 bg-gradient-to-b from-[#0e0e0e]/80 to-transparent"
+              : "border-black/[0.08] bg-gradient-to-b from-[#F3F4F6]/80 to-transparent"
           }`}
+          style={{
+            background: isDark
+              ? "linear-gradient(180deg, rgba(14,14,14,0.95) 0%, rgba(14,14,14,0.8) 100%)"
+              : "linear-gradient(180deg, rgba(243,244,246,0.95) 0%, rgba(243,244,246,0.8) 100%)",
+          }}
         >
+          {/* Gradient underline */}
+          <div
+            className="absolute bottom-0 left-0 right-0 h-px"
+            style={{
+              background: isDark
+                ? "linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)"
+                : "linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent)",
+            }}
+          />
+
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className={`p-2 rounded-lg transition-all duration-300 group relative ${
+            className={`p-2 rounded-lg transition-all duration-300 group relative z-10 ${
               isDark
                 ? "hover:bg-white/10 text-white/70 hover:text-white"
                 : "hover:bg-black/[0.08] text-[#3F3F3F]/70 hover:text-[#1A1A1A]"
@@ -211,11 +226,17 @@ export default function Index() {
             </div>
           </button>
 
-          <div className="absolute left-1/2 transform -translate-x-1/2">
+          <div className="absolute left-1/2 transform -translate-x-1/2 z-10">
             <h1
-              className={`text-sm font-semibold transition-colors duration-300 ${
+              className={`text-sm font-semibold transition-all duration-300 ${
                 isDark ? "text-white/80" : "text-[#3F3F3F]/80"
               }`}
+              style={{
+                letterSpacing: "0.5px",
+                textShadow: isDark
+                  ? "0 2px 8px rgba(0,0,0,0.4)"
+                  : "0 1px 4px rgba(0,0,0,0.08)",
+              }}
             >
               VanIA
             </h1>

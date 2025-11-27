@@ -1,91 +1,79 @@
 import { Request, Response } from "express";
-
-const PROJECT_ID = "keysystem-d0b86-8df89";
-const API_KEY = "AIzaSyD7KlxN05OoSCGHwjXhiiYyKF5bOXianLY";
-
-function extractValue(field: any): any {
-  if (!field) return null;
-  if (field.stringValue !== undefined) return field.stringValue;
-  if (field.integerValue !== undefined) return parseInt(field.integerValue);
-  if (field.booleanValue !== undefined) return field.booleanValue;
-  if (field.doubleValue !== undefined) return field.doubleValue;
-  return null;
-}
+import { z } from "zod";
+import { getAdminAuth, getAdminDb } from "../lib/firebase-admin";
+import { DailyResetSchema } from "../middleware/security";
+import { Timestamp } from "firebase-admin/firestore";
 
 export async function handleDailyReset(req: Request, res: Response) {
-  const { userId } = req.body;
-
-  if (!userId || typeof userId !== "string") {
-    return res.status(400).json({
-      message: "User ID is required",
-    });
-  }
-
   try {
-    // Get user data
-    const userResponse = await fetch(
-      `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/users/${userId}?key=${API_KEY}`,
-      {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+    // Validate input
+    const validated = DailyResetSchema.parse(req.body);
+    const { idToken, userId } = validated;
 
-    if (!userResponse.ok) {
-      return res.status(400).json({
-        message: "Utilisateur non trouvé",
+    // Verify authentication
+    const auth = getAdminAuth();
+    let decoded;
+    try {
+      decoded = await auth.verifyIdToken(idToken);
+    } catch (error) {
+      return res.status(401).json({
+        error: "Unauthorized: Invalid or expired token",
       });
     }
 
-    const userDoc = await userResponse.json();
-    const userData = userDoc.fields;
+    // Security: Only allow users to reset their own data, or admins
+    if (decoded.uid !== userId) {
+      const userDoc = await getAdminDb()
+        .collection("users")
+        .doc(decoded.uid)
+        .get();
 
+      if (!userDoc.exists || !userDoc.data()?.isAdmin) {
+        return res.status(403).json({
+          error: "Forbidden: Can only reset your own data",
+        });
+      }
+    }
+
+    // Get user data
+    const db = getAdminDb();
+    const userDocRef = db.collection("users").doc(userId);
+    const userDocSnap = await userDocRef.get();
+
+    if (!userDocSnap.exists) {
+      return res.status(404).json({
+        error: "User not found",
+      });
+    }
+
+    const userData = userDocSnap.data();
     if (!userData) {
-      return res.status(400).json({
-        message: "Utilisateur non valide",
+      return res.status(404).json({
+        error: "User data not found",
       });
     }
 
     const now = Date.now();
-    const licenseExpiresAt = extractValue(userData.licenseExpiresAt);
-    const lastMessageReset = extractValue(userData.lastMessageReset);
-    const plan = extractValue(userData.plan);
+    const licenseExpiresAt = userData.licenseExpiresAt
+      ? userData.licenseExpiresAt.toMillis?.() || userData.licenseExpiresAt
+      : null;
+    const lastMessageReset = userData.lastMessageReset
+      ? userData.lastMessageReset.toMillis?.() || userData.lastMessageReset
+      : null;
+    const plan = userData.plan || "Free";
 
     // Check if license has expired
     if (licenseExpiresAt && licenseExpiresAt <= now) {
       // License expired, reset to Free plan
-      const updateQuery = {
-        writes: [
-          {
-            update: {
-              name: `projects/${PROJECT_ID}/databases/(default)/documents/users/${userId}`,
-              fields: {
-                plan: { stringValue: "Free" },
-                messagesLimit: { integerValue: "10" },
-                messagesUsed: { integerValue: "0" },
-                licenseKey: { stringValue: "" },
-                licenseExpiresAt: { nullValue: null },
-              },
-            },
-          },
-        ],
-      };
+      await userDocRef.update({
+        plan: "Free",
+        messagesLimit: 10,
+        messagesUsed: 0,
+        licenseKey: "",
+        licenseExpiresAt: null,
+      });
 
-      const updateResponse = await fetch(
-        `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:batchWrite?key=${API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updateQuery),
-        },
-      );
-
-      if (!updateResponse.ok) {
-        console.error(
-          "Error updating expired license:",
-          await updateResponse.text(),
-        );
-      }
+      console.log(`[RESET] User ${userId} license expired, reverted to Free`);
 
       return res.status(200).json({
         message: "Licence expirée - reverted to Free",
@@ -102,37 +90,15 @@ export async function handleDailyReset(req: Request, res: Response) {
 
       if (lastResetDate !== todayDate) {
         // Reset messages for the new day
-        const resetQuery = {
-          writes: [
-            {
-              update: {
-                name: `projects/${PROJECT_ID}/databases/(default)/documents/users/${userId}`,
-                fields: {
-                  messagesUsed: { integerValue: "0" },
-                  lastMessageReset: { integerValue: now.toString() },
-                },
-              },
-            },
-          ],
-        };
+        await userDocRef.update({
+          messagesUsed: 0,
+          lastMessageReset: Timestamp.now(),
+        });
 
-        const resetResponse = await fetch(
-          `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:batchWrite?key=${API_KEY}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(resetQuery),
-          },
-        );
+        const messageLimit = userData.messagesLimit || 500;
 
-        if (!resetResponse.ok) {
-          console.error(
-            "Error resetting messages:",
-            await resetResponse.text(),
-          );
-        }
+        console.log(`[RESET] User ${userId} messages reset for new day`);
 
-        const messageLimit = extractValue(userData.messagesLimit) || 500;
         return res.status(200).json({
           message: "Messages réinitialisés pour aujourd'hui",
           messagesUsed: 0,
@@ -143,8 +109,17 @@ export async function handleDailyReset(req: Request, res: Response) {
 
     return res.status(200).json({
       message: "Aucun reset nécessaire",
+      messagesUsed: userData.messagesUsed || 0,
+      messagesLimit: userData.messagesLimit || 10,
     });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        error: "Invalid request body",
+        details: error.errors,
+      });
+    }
+
     console.error("Error in daily reset:", error);
     return res.status(500).json({
       message: "Erreur serveur lors du reset",

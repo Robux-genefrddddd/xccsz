@@ -5,7 +5,11 @@ import { handleDemo } from "./routes/demo";
 import { handleGetIP, handleCheckVPN } from "./routes/ip-detection";
 import { handleActivateLicense } from "./routes/license";
 import { handleDailyReset } from "./routes/daily-reset";
-import { handleAIChat } from "./routes/ai";
+import {
+  handleAIChat,
+  handleGetAIConfig,
+  handleUpdateAIConfig,
+} from "./routes/ai";
 import {
   handleVerifyAdmin,
   handleBanUser,
@@ -20,12 +24,13 @@ import {
   handleRecordUserIP,
   handleUpdateUserIPLogin,
 } from "./routes/ip-management";
-import { handleGetAIConfig, handleUpdateAIConfig } from "./routes/settings";
+import { handleGetAIConfig as handleGetAIConfigSettings } from "./routes/settings";
 import {
   validateContentType,
   validateRequestSize,
   validateInput,
-  rateLimit,
+  serverRateLimit,
+  authMiddleware,
 } from "./middleware/security";
 
 export function createServer() {
@@ -75,8 +80,11 @@ export function createServer() {
   // 6. Input validation (check for suspicious patterns)
   app.use(validateInput);
 
-  // 7. Rate limiting (general limit, stricter on admin routes)
-  app.use(rateLimit(60000, 100)); // 100 requests per minute per IP
+  // 7. Authentication middleware (extract token from request)
+  app.use(authMiddleware);
+
+  // 8. Global rate limiting (100 requests per minute per IP)
+  app.use(serverRateLimit(60000, 100));
 
   // Create API router to handle all API routes
   const apiRouter = express.Router();
@@ -89,9 +97,9 @@ export function createServer() {
 
   apiRouter.get("/demo", handleDemo);
 
-  // IP detection routes
-  apiRouter.get("/get-ip", handleGetIP);
-  apiRouter.post("/check-vpn", handleCheckVPN);
+  // IP detection routes (public, with rate limiting)
+  apiRouter.get("/get-ip", serverRateLimit(60000, 30), handleGetIP);
+  apiRouter.post("/check-vpn", serverRateLimit(60000, 10), handleCheckVPN);
 
   // IP management routes
   apiRouter.post("/check-ip-ban", handleCheckIPBan);
@@ -99,19 +107,23 @@ export function createServer() {
   apiRouter.post("/record-user-ip", handleRecordUserIP);
   apiRouter.post("/update-user-ip-login", handleUpdateUserIPLogin);
 
-  // License activation route
-  apiRouter.post("/activate-license", handleActivateLicense);
+  // License activation route (requires auth, strict rate limit)
+  apiRouter.post(
+    "/activate-license",
+    serverRateLimit(60000, 5),
+    handleActivateLicense,
+  );
 
-  // Daily reset route
-  apiRouter.post("/daily-reset", handleDailyReset);
+  // Daily reset route (requires auth, strict rate limit)
+  apiRouter.post("/daily-reset", serverRateLimit(60000, 5), handleDailyReset);
 
-  // AI chat route
-  apiRouter.post("/ai/chat", handleAIChat);
-  apiRouter.get("/ai/config", handleGetAIConfig);
-  apiRouter.put("/ai/config", handleUpdateAIConfig);
+  // AI chat route (requires auth, very strict rate limit - 10 requests per minute per user)
+  apiRouter.post("/ai/chat", serverRateLimit(60000, 10), handleAIChat);
+  apiRouter.get("/ai/config", handleGetAIConfigSettings);
+  apiRouter.put("/ai/config", serverRateLimit(60000, 5), handleUpdateAIConfig);
 
   // Admin routes (require authentication + stricter rate limiting)
-  const adminRateLimit = rateLimit(60000, 10); // 10 requests per minute per IP
+  const adminRateLimit = serverRateLimit(60000, 10); // 10 requests per minute per user
   apiRouter.post("/admin/verify", adminRateLimit, handleVerifyAdmin);
   apiRouter.post("/admin/ban-user", adminRateLimit, handleBanUser);
   apiRouter.post("/admin/ban-ip", adminRateLimit, handleBanIP);

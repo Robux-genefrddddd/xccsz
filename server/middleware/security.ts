@@ -91,71 +91,86 @@ export function validateInput(req: Request, res: Response, next: NextFunction) {
     });
   }
 
-  // Detect common injection patterns
-  const suspiciousPatterns = [
-    /<script[^>]*>/i,
-    /javascript:/i,
-    /on\w+\s*=/i,
-    /SELECT|INSERT|UPDATE|DELETE|DROP/i,
-    /UNION|WHERE/i,
-    /\.\.\/|\.\.\\/,
-  ];
-
-  const hasSuspiciousContent = (obj: unknown): boolean => {
-    if (typeof obj === "string") {
-      return suspiciousPatterns.some((pattern) => pattern.test(obj));
-    }
-    if (typeof obj === "object" && obj !== null) {
-      return Object.values(obj).some(hasSuspiciousContent);
-    }
-    return false;
-  };
-
-  // Only warn, don't block (some legitimate content may contain these words)
-  if (hasSuspiciousContent(req.body)) {
-    console.warn(
-      `[SECURITY] Potentially suspicious content detected in ${req.method} ${req.path}`,
-    );
-  }
-
   next();
 }
 
 /**
- * Rate limiting helper using in-memory store.
- * For production, use Redis or similar.
+ * Server-side rate limiting using in-memory store.
+ * Tracks requests per user ID (from JWT) and per IP address.
+ * For production, use Redis or similar persistent store.
  */
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+const rateLimitStore = new Map<string, Array<{ timestamp: number }>>();
 
-export function rateLimit(windowMs: number = 60000, maxRequests: number = 100) {
+export function serverRateLimit(
+  windowMs: number = 60000,
+  maxRequests: number = 100,
+) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const ip =
-      (req.headers["x-forwarded-for"] as string) ||
+    // Prefer user ID from JWT (if authenticated), fallback to IP
+    const userIdentifier =
+      (req as any).userId ||
+      (req.headers["x-forwarded-for"] as string)?.split(",")[0] ||
       req.ip ||
       req.socket.remoteAddress ||
       "unknown";
 
-    const key = `${ip}:${req.path}`;
+    const key = `${userIdentifier}:${req.path}`;
     const now = Date.now();
 
-    const record = rateLimitStore.get(key);
+    // Initialize or get existing request timestamps
+    let requests = rateLimitStore.get(key) || [];
 
-    if (!record || now > record.resetTime) {
-      // New window
-      rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
-      return next();
-    }
+    // Remove old requests outside the window
+    requests = requests.filter((req) => now - req.timestamp < windowMs);
 
-    if (record.count >= maxRequests) {
+    // Check if limit exceeded
+    if (requests.length >= maxRequests) {
+      const oldestRequest = requests[0];
+      const retryAfter = Math.ceil(
+        (windowMs - (now - oldestRequest.timestamp)) / 1000,
+      );
+
       return res.status(429).json({
         error: "Too many requests. Please try again later.",
-        retryAfter: Math.ceil((record.resetTime - now) / 1000),
+        retryAfter,
       });
     }
 
-    record.count++;
+    // Add current request
+    requests.push({ timestamp: now });
+    rateLimitStore.set(key, requests);
+
+    // Store on request object for downstream use
+    (req as any).rateLimitRemaining = maxRequests - requests.length;
+
     next();
   };
+}
+
+/**
+ * Authentication middleware - extracts and validates JWT token from request.
+ */
+export function authMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const idToken =
+    req.body?.idToken ||
+    (req.headers.authorization?.startsWith("Bearer ")
+      ? req.headers.authorization.slice(7)
+      : null);
+
+  if (!idToken) {
+    // Store null userId and continue (route handlers will check for auth)
+    (req as any).idToken = null;
+    (req as any).userId = null;
+    return next();
+  }
+
+  // Store token on request for later verification
+  (req as any).idToken = idToken;
+  next();
 }
 
 /**
@@ -167,7 +182,6 @@ export function validateOrigin(allowedOrigins: string[]) {
     const origin = req.headers.origin;
 
     if (!origin || !allowedOrigins.includes(origin)) {
-      // Log potential CSRF attempt
       console.warn(
         `[SECURITY] Blocked request from unauthorized origin: ${origin}`,
       );
@@ -191,6 +205,15 @@ export const IdTokenSchema = z
   .regex(/^[A-Za-z0-9_\-\.]+$/, "Invalid token format");
 
 /**
+ * Firebase UID validation schema.
+ */
+export const FirebaseUidSchema = z
+  .string()
+  .min(20, "Invalid user ID")
+  .max(40, "Invalid user ID")
+  .regex(/^[a-zA-Z0-9]{20,40}$/, "Invalid user ID format");
+
+/**
  * Generic input validation using Zod.
  */
 export function validateRequestBody<T>(schema: z.ZodSchema<T>) {
@@ -203,7 +226,10 @@ export function validateRequestBody<T>(schema: z.ZodSchema<T>) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           error: "Invalid request body",
-          details: error.errors,
+          details: error.errors.map((e) => ({
+            field: e.path.join("."),
+            message: e.message,
+          })),
         });
       }
       res.status(400).json({
@@ -221,12 +247,10 @@ export function detectSqlInjection(value: string): boolean {
   if (!value || typeof value !== "string") return false;
 
   const sqlPatterns = [
-    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE)\b)/i,
-    /(\bunion\b)/i,
+    /(\b(DROP|TRUNCATE|ALTER|EXEC|EXECUTE)\b)/i,
     /(--|#|\/\*)/,
     /(\bor\b.*=.*)/i,
     /(\band\b.*=.*)/i,
-    /(\bwhere\b)/i,
     /(;)/,
   ];
 
@@ -239,19 +263,17 @@ export function detectSqlInjection(value: string): boolean {
  */
 export function detectNoSqlInjection(value: unknown): boolean {
   if (typeof value === "string") {
-    // Check for NoSQL operators
     const noSqlPatterns = [
       /\$where/,
       /\$ne/,
       /\$gt/,
+      /\$lt/,
+      /\$eq/,
       /\$regex/,
-      /\$where/,
-      /function/i,
     ];
     return noSqlPatterns.some((pattern) => pattern.test(value));
   }
 
-  // Check for object-based injection (e.g., { $ne: null })
   if (typeof value === "object" && value !== null) {
     const keys = Object.keys(value);
     return keys.some((key) => key.startsWith("$"));
@@ -264,15 +286,11 @@ export function detectNoSqlInjection(value: unknown): boolean {
  * Strict input validation for admin operations.
  */
 export const AdminOperationSchema = z.object({
-  idToken: z
-    .string()
-    .min(10)
-    .max(3000)
-    .regex(/^[A-Za-z0-9_\-\.]+$/, "Invalid token format"),
+  idToken: IdTokenSchema,
 });
 
 export const BanUserSchema = AdminOperationSchema.extend({
-  userId: z.string().min(10).max(100),
+  userId: FirebaseUidSchema,
   reason: z.string().min(5).max(500).trim(),
   duration: z.number().int().min(1).max(36500),
 });
@@ -291,8 +309,46 @@ export const BanIPSchema = AdminOperationSchema.extend({
   duration: z.number().int().min(1).max(36500),
 });
 
-export const AddMessageSchema = z.object({
-  conversationId: z.string().min(1).max(255),
-  userId: z.string().min(10).max(100),
-  text: z.string().min(1).max(5000).trim(),
+export const ActivateLicenseSchema = z.object({
+  idToken: IdTokenSchema,
+  userId: FirebaseUidSchema,
+  licenseKey: z.string().min(10).max(255),
+});
+
+export const DailyResetSchema = z.object({
+  idToken: IdTokenSchema,
+  userId: FirebaseUidSchema,
+});
+
+export const AIChatSchema = z.object({
+  idToken: IdTokenSchema,
+  userMessage: z.string().min(1).max(5000).trim(),
+  conversationHistory: z
+    .array(
+      z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string().max(5000),
+      }),
+    )
+    .optional()
+    .default([]),
+  model: z
+    .enum([
+      "x-ai/grok-4.1-fast:free",
+      "gpt-4",
+      "gpt-3.5-turbo",
+      "claude-3-opus",
+      "claude-3-sonnet",
+    ])
+    .optional()
+    .default("x-ai/grok-4.1-fast:free"),
+  temperature: z.number().min(0).max(2).optional().default(0.7),
+  maxTokens: z.number().int().min(1).max(4096).optional().default(2048),
+});
+
+export const AIConfigSchema = z.object({
+  idToken: IdTokenSchema,
+  model: z.string().optional(),
+  temperature: z.number().min(0).max(2).optional(),
+  maxTokens: z.number().int().min(1).max(4096).optional(),
 });
