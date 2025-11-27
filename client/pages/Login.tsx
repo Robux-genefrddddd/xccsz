@@ -5,7 +5,6 @@ import { auth } from "@/lib/firebase";
 import { Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { IPService } from "@/lib/ip-service";
-import TOSModal from "@/components/TOSModal";
 
 export default function Login() {
   const [email, setEmail] = useState("");
