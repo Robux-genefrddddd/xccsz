@@ -127,32 +127,17 @@ export default function Index() {
     );
   }
 
-  // Show maintenance modal (dismissible)
-  if (maintenanceNotice && !acknowledgedMaintenance) {
+  // Show maintenance modal (critical = non-dismissible and blocks app)
+  if (maintenanceNotice) {
     return (
-      <>
-        <SystemNoticeModal
-          type="maintenance"
-          title={maintenanceNotice.title}
-          message={maintenanceNotice.message}
-          severity={maintenanceNotice.severity}
-          onAcknowledge={() => setAcknowledgedMaintenance(true)}
-          dismissible={maintenanceNotice.severity !== "critical"}
-        />
-        {maintenanceNotice.severity !== "critical" && (
-          <div className="flex h-screen bg-background opacity-50 pointer-events-none">
-            <Sidebar
-              isOpen={sidebarOpen}
-              onClose={() => setSidebarOpen(false)}
-              activeConversationId={activeConversationId}
-              onConversationSelect={setActiveConversationId}
-            />
-            <div className="flex-1 flex flex-col md:flex-row">
-              <ChatArea conversationId={activeConversationId} />
-            </div>
-          </div>
-        )}
-      </>
+      <SystemNoticeModal
+        type="maintenance"
+        title={maintenanceNotice.title}
+        message={maintenanceNotice.message}
+        severity={maintenanceNotice.severity}
+        onAcknowledge={maintenanceNotice.severity === "critical" ? undefined : () => setAcknowledgedMaintenance(true)}
+        dismissible={maintenanceNotice.severity !== "critical"}
+      />
     );
   }
 
