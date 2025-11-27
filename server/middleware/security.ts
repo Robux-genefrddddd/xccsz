@@ -96,7 +96,7 @@ export function validateInput(req: Request, res: Response, next: NextFunction) {
 
 /**
  * Server-side rate limiting using in-memory store.
- * Tracks requests per user ID (from JWT) and per IP address.
+ * Tracks requests per user ID (from JWT) with priority, falls back to IP address.
  * For production, use Redis or similar persistent store.
  */
 const rateLimitStore = new Map<string, Array<{ timestamp: number }>>();
@@ -106,15 +106,26 @@ export function serverRateLimit(
   maxRequests: number = 100,
 ) {
   return (req: Request, res: Response, next: NextFunction) => {
-    // Prefer user ID from JWT (if authenticated), fallback to IP
-    const userIdentifier =
-      (req as any).userId ||
-      (req.headers["x-forwarded-for"] as string)?.split(",")[0] ||
-      req.ip ||
-      req.socket.remoteAddress ||
-      "unknown";
+    // Priority: use decoded UID > use IP address
+    let userIdentifier: string;
 
-    const key = `${userIdentifier}:${req.path}`;
+    if ((req as any).decodedUid) {
+      // User is authenticated, use their UID for rate limiting
+      userIdentifier = `uid:${(req as any).decodedUid}`;
+    } else if ((req as any).userId) {
+      // Fallback to userId if available
+      userIdentifier = `uid:${(req as any).userId}`;
+    } else {
+      // Fall back to IP address for unauthenticated requests
+      userIdentifier =
+        `ip:${(req.headers["x-forwarded-for"] as string)?.split(",")[0]}` ||
+        `ip:${req.headers["x-real-ip"]}` ||
+        `ip:${req.ip}` ||
+        `ip:${req.socket.remoteAddress}` ||
+        "unknown";
+    }
+
+    const key = `ratelimit:${userIdentifier}:${req.path}`;
     const now = Date.now();
 
     // Initialize or get existing request timestamps
