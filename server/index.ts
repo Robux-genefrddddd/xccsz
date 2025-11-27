@@ -6,14 +6,29 @@ import { handleGetIP, handleCheckVPN } from "./routes/ip-detection";
 import { handleActivateLicense } from "./routes/license";
 import { handleDailyReset } from "./routes/daily-reset";
 import { handleAIChat } from "./routes/ai";
+import {
+  handleVerifyAdmin,
+  handleBanUser,
+  handleGetAllUsers,
+  handleCreateLicense,
+} from "./routes/admin";
 
 export function createServer() {
   const app = express();
 
   // Middleware
   app.use(cors());
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json({ limit: "10mb" }));
+  app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+  // Security headers
+  app.use((req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    next();
+  });
 
   // Example API routes
   app.get("/api/ping", (_req, res) => {
@@ -35,6 +50,12 @@ export function createServer() {
 
   // AI chat route
   app.post("/api/ai/chat", handleAIChat);
+
+  // Admin routes (require authentication)
+  app.post("/api/admin/verify", handleVerifyAdmin);
+  app.post("/api/admin/ban-user", handleBanUser);
+  app.get("/api/admin/users", handleGetAllUsers);
+  app.post("/api/admin/create-license", handleCreateLicense);
 
   return app;
 }
