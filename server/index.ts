@@ -20,6 +20,7 @@ import {
   handleRecordUserIP,
   handleUpdateUserIPLogin,
 } from "./routes/ip-management";
+import { handleGetAIConfig, handleUpdateAIConfig } from "./routes/settings";
 import {
   validateContentType,
   validateRequestSize,
@@ -106,6 +107,8 @@ export function createServer() {
 
   // AI chat route
   apiRouter.post("/ai/chat", handleAIChat);
+  apiRouter.get("/ai/config", handleGetAIConfig);
+  apiRouter.put("/ai/config", handleUpdateAIConfig);
 
   // Admin routes (require authentication + stricter rate limiting)
   const adminRateLimit = rateLimit(60000, 10); // 10 requests per minute per IP
