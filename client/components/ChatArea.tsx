@@ -3,6 +3,13 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { MessagesService, Message } from "@/lib/messages";
 import { AIService } from "@/lib/ai";
+import {
+  validateMessageContent,
+  detectInjectionAttempt,
+  sanitizeInput,
+  RateLimiter,
+  escapeHtml,
+} from "@/lib/security";
 import { toast } from "sonner";
 import { MessageRenderer } from "@/components/MessageRenderer";
 import { ThinkingAnimation } from "@/components/ThinkingAnimation";
