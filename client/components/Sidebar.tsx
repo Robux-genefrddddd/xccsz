@@ -407,8 +407,12 @@ export function Sidebar({
                 <div
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all border shadow-sm group-hover:-translate-y-px ${
                     conv.id === activeConversationId
-                      ? "bg-primary/15 border-primary/50 text-foreground shadow-md"
-                      : "border-white/[0.08] hover:bg-white/[0.05] text-muted-foreground hover:text-foreground hover:shadow-md hover:border-primary/30"
+                      ? isDark
+                        ? "bg-primary/15 border-primary/50 text-foreground shadow-md"
+                        : "bg-primary/10 border-primary/30 text-[#1A1A1A] shadow-md"
+                      : isDark
+                      ? "border-white/[0.08] hover:bg-white/[0.05] text-muted-foreground hover:text-foreground hover:shadow-md hover:border-primary/30"
+                      : "border-black/[0.08] hover:bg-black/[0.05] text-[#3F3F3F]/70 hover:text-[#1A1A1A] hover:shadow-md hover:border-primary/30"
                   }`}
                 >
                   <button
