@@ -76,6 +76,13 @@ export default function Register() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Check TOS acceptance
+    if (!tosAccepted) {
+      setShowTOSModal(true);
+      toast.error("Vous devez accepter les conditions d'utilisation");
+      return;
+    }
+
     // Verify captcha
     if (!verifyCaptcha()) {
       toast.error("Réponse au captcha incorrecte. Veuillez réessayer.");
