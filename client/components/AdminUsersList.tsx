@@ -67,12 +67,17 @@ export default function AdminUsersList({
         },
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Erreur lors du chargement des utilisateurs");
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        throw new Error("Invalid response from server");
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || data.error || "Erreur lors du chargement des utilisateurs");
+      }
+
       const usersList = data.users as UserData[];
 
       // Load IP information for each user
