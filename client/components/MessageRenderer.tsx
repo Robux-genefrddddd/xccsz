@@ -354,14 +354,24 @@ function parseInlineMarkdown(text: string, isDark: boolean): ReactNode[] {
     switch (m.type) {
       case "bold":
         parts.push(
-          <strong key={idx} className="font-bold text-white">
+          <strong
+            key={idx}
+            className={`font-bold transition-colors duration-300 ${
+              isDark ? "text-white" : "text-[#1A1A1A]"
+            }`}
+          >
             {escapeHtml(m.content)}
           </strong>,
         );
         break;
       case "italic":
         parts.push(
-          <em key={idx} className="italic text-white/95">
+          <em
+            key={idx}
+            className={`italic transition-colors duration-300 ${
+              isDark ? "text-white/95" : "text-[#1A1A1A]/95"
+            }`}
+          >
             {escapeHtml(m.content)}
           </em>,
         );
@@ -370,7 +380,11 @@ function parseInlineMarkdown(text: string, isDark: boolean): ReactNode[] {
         parts.push(
           <code
             key={idx}
-            className="bg-white/15 px-2 py-1 rounded font-mono text-sm text-orange-300 border border-white/10 font-semibold"
+            className={`px-2 py-1 rounded font-mono text-sm border font-semibold transition-all duration-300 ${
+              isDark
+                ? "bg-white/15 text-orange-300 border-white/10"
+                : "bg-orange-100/50 text-orange-700 border-orange-200"
+            }`}
           >
             {escapeHtml(m.content)}
           </code>,
@@ -383,7 +397,11 @@ function parseInlineMarkdown(text: string, isDark: boolean): ReactNode[] {
             href={m.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-orange-400 hover:text-orange-300 underline font-medium transition-colors"
+            className={`underline font-medium transition-colors duration-300 ${
+              isDark
+                ? "text-orange-400 hover:text-orange-300"
+                : "text-orange-600 hover:text-orange-700"
+            }`}
           >
             {escapeHtml(m.content)}
           </a>,
