@@ -166,15 +166,15 @@ export function SettingsModal({ isOpen, onOpenChange }: SettingsModalProps) {
                 <button
                   onClick={handleDarkModeToggle}
                   className={`relative w-12 h-7 rounded-full transition-all duration-300 flex items-center ${
-                    darkMode ? "bg-primary/40" : "bg-white/[0.1]"
+                    isDark ? "bg-primary/40" : "bg-white/[0.1]"
                   }`}
                 >
                   <div
                     className={`absolute w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300 flex items-center justify-center ${
-                      darkMode ? "translate-x-5" : "translate-x-0.5"
+                      isDark ? "translate-x-5" : "translate-x-0.5"
                     }`}
                   >
-                    {darkMode ? (
+                    {isDark ? (
                       <Moon size={14} className="text-primary" />
                     ) : (
                       <Sun size={14} className="text-yellow-500" />
