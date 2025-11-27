@@ -462,7 +462,11 @@ export function Sidebar({
         {/* Message Usage Section */}
         <div
           id="messages-counter"
-          className="px-3 py-2.5 border-t border-white/[0.08] animate-fadeIn bg-white/[0.02] rounded-[10px] shadow-sm"
+          className={`px-3 py-2.5 border-t animate-fadeIn rounded-[10px] shadow-sm transition-all duration-300 ${
+            isDark
+              ? "border-white/[0.08] bg-white/[0.02]"
+              : "border-black/[0.08] bg-black/[0.02]"
+          }`}
           style={{
             animationDelay: "0.25s",
             marginLeft: "20px",
@@ -472,7 +476,13 @@ export function Sidebar({
           }}
         >
           <div className="flex items-center gap-2 mb-2.5 justify-between">
-            <span className="text-xs text-foreground/70 font-medium">
+            <span
+              className={`text-xs font-medium transition-colors duration-300 ${
+                isDark
+                  ? "text-foreground/70"
+                  : "text-[#3F3F3F]/70"
+              }`}
+            >
               Messages
             </span>
             <button
