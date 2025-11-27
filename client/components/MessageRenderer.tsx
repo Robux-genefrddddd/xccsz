@@ -89,7 +89,7 @@ function CodeBlockWithCopy({
   );
 }
 
-function parseMarkdownElements(text: string): ReactNode[] {
+function parseMarkdownElements(text: string, isDark: boolean): ReactNode[] {
   const lines = text.split("\n");
   const elements: ReactNode[] = [];
   let i = 0;
