@@ -326,7 +326,7 @@ function parseInlineMarkdown(text: string): ReactNode[] {
     parts.push(escapeHtml(text.substring(lastIndex)));
   }
 
-  return parts.length > 0 ? parts : [text];
+  return parts.length > 0 ? parts : [escapeHtml(text)];
 }
 
 export function MessageRenderer({
