@@ -201,11 +201,22 @@ function parseMarkdownElements(text: string, isDark: boolean): ReactNode[] {
         elements.push(
           <ol
             key={`ol-${i}`}
-            className="list-decimal list-inside mb-3 space-y-2 text-white/90 pl-2"
+            className={`list-decimal list-inside mb-3 space-y-2 pl-2 transition-all duration-300 ${
+              isDark
+                ? "text-white/90"
+                : "text-[#1A1A1A]/90"
+            }`}
           >
             {listItems.map((item, idx) => (
-              <li key={idx} className="text-white/90 leading-[1.55]">
-                {parseInlineMarkdown(item)}
+              <li
+                key={idx}
+                className={`leading-[1.55] transition-all duration-300 ${
+                  isDark
+                    ? "text-white/90"
+                    : "text-[#1A1A1A]/90"
+                }`}
+              >
+                {parseInlineMarkdown(item, isDark)}
               </li>
             ))}
           </ol>,
@@ -214,11 +225,22 @@ function parseMarkdownElements(text: string, isDark: boolean): ReactNode[] {
         elements.push(
           <ul
             key={`ul-${i}`}
-            className="list-disc list-inside mb-3 space-y-2 text-white/90 pl-2"
+            className={`list-disc list-inside mb-3 space-y-2 pl-2 transition-all duration-300 ${
+              isDark
+                ? "text-white/90"
+                : "text-[#1A1A1A]/90"
+            }`}
           >
             {listItems.map((item, idx) => (
-              <li key={idx} className="text-white/90 leading-[1.55]">
-                {parseInlineMarkdown(item)}
+              <li
+                key={idx}
+                className={`leading-[1.55] transition-all duration-300 ${
+                  isDark
+                    ? "text-white/90"
+                    : "text-[#1A1A1A]/90"
+                }`}
+              >
+                {parseInlineMarkdown(item, isDark)}
               </li>
             ))}
           </ul>,
