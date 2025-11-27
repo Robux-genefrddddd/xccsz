@@ -1,6 +1,5 @@
 import { RequestHandler } from "express";
-import { adminDB } from "@/server/lib/firebase-admin";
-import { doc, getDoc, setDoc } from "firebase-admin/firestore";
+import { getAdminDb } from "../lib/firebase-admin";
 
 export interface AIConfig {
   model: string;
@@ -18,8 +17,8 @@ const DEFAULT_CONFIG: AIConfig = {
 
 export const handleGetAIConfig: RequestHandler = async (req, res) => {
   try {
-    const configRef = doc(adminDB, "settings", "ai");
-    const configSnap = await getDoc(configRef);
+    const db = getAdminDb();
+    const configSnap = await db.collection("settings").doc("ai").get();
 
     if (configSnap.exists()) {
       return res.json({ ...DEFAULT_CONFIG, ...configSnap.data() });
@@ -40,8 +39,8 @@ export const handleUpdateAIConfig: RequestHandler = async (req, res) => {
       return;
     }
 
-    const configRef = doc(adminDB, "settings", "ai");
-    await setDoc(configRef, config, { merge: true });
+    const db = getAdminDb();
+    await db.collection("settings").doc("ai").set(config, { merge: true });
 
     res.json({ success: true });
   } catch (error) {
