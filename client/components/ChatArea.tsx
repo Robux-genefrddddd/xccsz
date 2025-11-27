@@ -1,6 +1,7 @@
 import { Send, Smile, Loader2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { MessagesService, Message } from "@/lib/messages";
 import { getStorage, ref, getBytes } from "firebase/storage";
 import { AIService } from "@/lib/ai";
