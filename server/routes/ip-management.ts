@@ -1,4 +1,5 @@
 import { RequestHandler } from "express";
+import { z } from "zod";
 import {
   getAdminDb,
   initializeFirebaseAdmin,
@@ -8,6 +9,34 @@ import { Timestamp } from "firebase-admin/firestore";
 
 // Initialize Firebase Admin on module load
 initializeFirebaseAdmin();
+
+/**
+ * Validation schemas for IP management endpoints
+ */
+const IPAddressSchema = z
+  .string()
+  .ip({ version: "v4" })
+  .or(z.string().ip({ version: "v6" }));
+
+const CheckIPBanSchema = z.object({
+  ipAddress: IPAddressSchema,
+});
+
+const CheckIPLimitSchema = z.object({
+  ipAddress: IPAddressSchema,
+  maxAccounts: z.number().int().min(1).max(10),
+});
+
+const RecordUserIPSchema = z.object({
+  userId: z.string().min(20).max(40).regex(/^[a-zA-Z0-9]{20,40}$/),
+  ipAddress: IPAddressSchema,
+  email: z.string().email().optional(),
+});
+
+const UpdateUserIPLoginSchema = z.object({
+  userId: z.string().min(20).max(40).regex(/^[a-zA-Z0-9]{20,40}$/),
+  ipAddress: IPAddressSchema,
+});
 
 export interface IPBan {
   id: string;
