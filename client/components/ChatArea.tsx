@@ -686,7 +686,7 @@ export function ChatArea({ conversationId }: ChatAreaProps) {
                 );
               })}
               {(loading || isThinking || isTyping || isRenderingBlocks) && (
-                <div className="flex w-full justify-start animate-springFade">
+                <div className="flex w-full justify-start animate-messageFadeUp">
                   <div className="flex gap-2 items-start max-w-lg">
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-md border transition-all duration-300 ${
