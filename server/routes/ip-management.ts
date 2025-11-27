@@ -94,7 +94,29 @@ export const handleCheckIPLimit: RequestHandler = async (req, res) => {
       return;
     }
 
+    // If Firebase Admin is not initialized, return no limit exceeded
+    if (!isAdminInitialized()) {
+      console.warn(
+        "Firebase Admin not initialized. Set FIREBASE_SERVICE_ACCOUNT_KEY env var for IP limit checking.",
+      );
+      res.json({
+        accountCount: 0,
+        maxAccounts,
+        isLimitExceeded: false,
+      });
+      return;
+    }
+
     const db = getAdminDb();
+    if (!db) {
+      res.json({
+        accountCount: 0,
+        maxAccounts,
+        isLimitExceeded: false,
+      });
+      return;
+    }
+
     const snapshot = await db
       .collection("user_ips")
       .where("ipAddress", "==", ipAddress)
