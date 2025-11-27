@@ -375,7 +375,11 @@ export function Sidebar({
           <button
             id="new-conversation-btn"
             onClick={handleNewConversation}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-primary/20 hover:bg-primary/30 text-primary font-medium text-xs rounded-lg transition-all duration-200 shadow-sm hover:shadow-md hover:opacity-95 hover:-translate-y-px active:scale-95"
+            className={`w-full flex items-center justify-center gap-2 px-3 py-2 font-medium text-xs rounded-lg transition-all duration-200 shadow-sm hover:shadow-md hover:opacity-95 hover:-translate-y-px active:scale-95 ${
+              isDark
+                ? "bg-primary/20 hover:bg-primary/30 text-primary"
+                : "bg-primary/10 hover:bg-primary/20 text-primary"
+            }`}
           >
             <Plus size={16} className="flex-shrink-0" />
             <span>New</span>
