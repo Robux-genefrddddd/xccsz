@@ -156,10 +156,27 @@ export default function AdminUsersSection() {
         body: JSON.stringify(body),
       });
 
-      const data = await response.json();
-
+      // Check response status before reading body
       if (!response.ok) {
-        throw new Error(data.message || data.error || "Action échouée");
+        let errorMessage = "Action échouée";
+        try {
+          const errorData = await response.json();
+          errorMessage =
+            errorData.message || errorData.error || errorMessage;
+        } catch {
+          // If we can't parse error details, use the status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      // Parse successful response
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        // Some endpoints might not return a body, which is fine
+        data = { success: true };
       }
 
       setUsers((prev) =>
