@@ -8,23 +8,21 @@ import {
   Key,
   Brain,
   BarChart3,
-  Plus,
-  ChevronDown,
-  Check,
-  X,
+  Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 import AdminUsersSection from "@/components/admin/AdminUsersSection";
 import AdminLicensesSection from "@/components/admin/AdminLicensesSection";
 import AdminAIConfigSection from "@/components/admin/AdminAIConfigSection";
 import AdminSystemSection from "@/components/admin/AdminSystemSection";
+import AdminMaintenanceSection from "@/components/admin/AdminMaintenanceSection";
 import { useState } from "react";
 
 export default function Admin() {
   const { userData, user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<
-    "users" | "licenses" | "ai" | "system"
+    "users" | "licenses" | "ai" | "system" | "maintenance"
   >("users");
 
   if (!userData?.isAdmin) {
@@ -60,6 +58,7 @@ export default function Admin() {
     { id: "licenses", label: "Licences", icon: Key },
     { id: "ai", label: "Configuration IA", icon: Brain },
     { id: "system", label: "Système", icon: BarChart3 },
+    { id: "maintenance", label: "Maintenance", icon: Settings },
   ] as const;
 
   return (
@@ -89,7 +88,7 @@ export default function Admin() {
       {/* Navigation Tabs */}
       <div className="border-b border-white/5 bg-[#0a0a0a]">
         <div className="max-w-7xl mx-auto px-6">
-          <nav className="flex gap-8">
+          <nav className="flex gap-8 overflow-x-auto">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -97,7 +96,7 @@ export default function Admin() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-4 px-1 border-b-2 transition-all flex items-center gap-2 text-sm font-medium ${
+                  className={`py-4 px-1 border-b-2 transition-all flex items-center gap-2 text-sm font-medium whitespace-nowrap ${
                     isActive
                       ? "border-white text-white"
                       : "border-transparent text-foreground/60 hover:text-foreground/80"
@@ -118,6 +117,7 @@ export default function Admin() {
         {activeTab === "licenses" && <AdminLicensesSection />}
         {activeTab === "ai" && <AdminAIConfigSection />}
         {activeTab === "system" && <AdminSystemSection />}
+        {activeTab === "maintenance" && <AdminMaintenanceSection />}
       </main>
     </div>
   );
