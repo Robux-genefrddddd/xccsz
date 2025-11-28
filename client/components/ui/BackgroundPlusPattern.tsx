@@ -1,16 +1,6 @@
 export function BackgroundPlusPattern() {
-  // Premium SVG with multiple crosses at different opacities and subtle glow effect
-  const svgPattern = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'>
-    <defs>
-      <filter id='softGlow'>
-        <feGaussianBlur in='SourceGraphic' stdDeviation='0.5' />
-      </filter>
-    </defs>
-    <!-- Primary cross with stronger visibility -->
-    <text x='20' y='20' text-anchor='middle' dominant-baseline='central' fill='rgba(255,255,255,0.12)' font-size='14' font-weight='600' filter='url(%23softGlow)'>+</text>
-    <!-- Secondary faded cross for texture variation -->
-    <text x='20' y='20' text-anchor='middle' dominant-baseline='central' fill='rgba(255,255,255,0.04)' font-size='14' font-weight='600'>+</text>
-  </svg>`;
+  // Premium SVG pattern with layered crosses and subtle glow
+  const svgPattern = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><text x='20' y='20' text-anchor='middle' dominant-baseline='central' fill='rgba(255,255,255,0.12)' font-size='14' font-weight='600'>+</text><text x='20' y='20' text-anchor='middle' dominant-baseline='central' fill='rgba(255,255,255,0.04)' font-size='14' font-weight='600'>+</text></svg>`;
 
   return (
     <div
