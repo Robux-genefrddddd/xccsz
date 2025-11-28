@@ -122,7 +122,7 @@ export default function AdminUsersSection() {
             default:
               return u;
           }
-        })
+        }),
       );
 
       const messages: Record<string, string> = {
@@ -140,7 +140,9 @@ export default function AdminUsersSection() {
         setUsers((prev) => prev.filter((u) => u.uid !== userId));
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erreur lors de l'action");
+      toast.error(
+        error instanceof Error ? error.message : "Erreur lors de l'action",
+      );
     } finally {
       setActionLoading(null);
       setConfirmAction(null);
@@ -160,7 +162,9 @@ export default function AdminUsersSection() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-white">Gestion des utilisateurs</h2>
+          <h2 className="text-lg font-semibold text-white">
+            Gestion des utilisateurs
+          </h2>
           <p className="text-sm text-foreground/60 mt-1">
             {users.length} utilisateur{users.length !== 1 ? "s" : ""} au total
           </p>
@@ -181,7 +185,9 @@ export default function AdminUsersSection() {
         />
         <StatCard
           label="Plan Pro"
-          value={users.filter((u) => u.plan === "Pro" || u.plan === "Classic").length.toString()}
+          value={users
+            .filter((u) => u.plan === "Pro" || u.plan === "Classic")
+            .length.toString()}
           color="emerald"
         />
         <StatCard
@@ -353,9 +359,7 @@ function StatCard({
   };
 
   return (
-    <div
-      className={`rounded-lg border p-4 ${colors[color]}`}
-    >
+    <div className={`rounded-lg border p-4 ${colors[color]}`}>
       <p className="text-xs text-foreground/70 uppercase tracking-wide mb-1">
         {label}
       </p>
@@ -392,10 +396,13 @@ function ActionButton({
   onClick: () => void;
 }) {
   const colors = {
-    purple: "bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border-purple-500/30",
-    slate: "bg-slate-500/20 hover:bg-slate-500/30 text-slate-300 border-slate-500/30",
+    purple:
+      "bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border-purple-500/30",
+    slate:
+      "bg-slate-500/20 hover:bg-slate-500/30 text-slate-300 border-slate-500/30",
     red: "bg-red-500/20 hover:bg-red-500/30 text-red-300 border-red-500/30",
-    amber: "bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/30",
+    amber:
+      "bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/30",
   };
 
   return (

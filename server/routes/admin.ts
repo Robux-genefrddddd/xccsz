@@ -302,7 +302,9 @@ export const handleCreateLicense: RequestHandler = async (req, res) => {
       usedAt: null,
     });
 
-    console.log(`[ADMIN] ${adminUid} created license ${licenseKey} for ${plan}`);
+    console.log(
+      `[ADMIN] ${adminUid} created license ${licenseKey} for ${plan}`,
+    );
 
     res.json({ success: true, license: { key: licenseKey, plan } });
   } catch (error) {
@@ -388,7 +390,10 @@ export const handleGetSystemStats: RequestHandler = async (req, res) => {
     const bannedUsers = users.filter((u) => u.isBanned).length;
     const freeUsers = users.filter((u) => u.plan === "Free").length;
     const proUsers = users.filter((u) => u.plan !== "Free").length;
-    const totalMessages = users.reduce((sum, u) => sum + (u.messagesUsed || 0), 0);
+    const totalMessages = users.reduce(
+      (sum, u) => sum + (u.messagesUsed || 0),
+      0,
+    );
 
     // Get license stats
     const licensesSnap = await db.collection("licenses").get();
@@ -405,7 +410,8 @@ export const handleGetSystemStats: RequestHandler = async (req, res) => {
       totalMessages,
       totalLicenses,
       usedLicenses,
-      avgMessagesPerUser: totalUsers > 0 ? Math.round(totalMessages / totalUsers) : 0,
+      avgMessagesPerUser:
+        totalUsers > 0 ? Math.round(totalMessages / totalUsers) : 0,
     });
   } catch (error) {
     console.error("Get system stats error:", error);
@@ -425,7 +431,10 @@ export const handlePurgeLicenses: RequestHandler = async (req, res) => {
     const db = FirebaseAdminService.getAdminDb();
     if (!db) throw new Error("Database not initialized");
 
-    const snapshot = await db.collection("licenses").where("valid", "==", false).get();
+    const snapshot = await db
+      .collection("licenses")
+      .where("valid", "==", false)
+      .get();
     let deleted = 0;
 
     for (const doc of snapshot.docs) {

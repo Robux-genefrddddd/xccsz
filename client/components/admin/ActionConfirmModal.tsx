@@ -76,7 +76,9 @@ export default function ActionConfirmModal({
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-[#1a1a1a] border border-white/10 rounded-lg max-w-md w-full shadow-lg">
         {/* Header */}
-        <div className={`p-6 border-b border-white/5 ${colorClasses[msg.color as keyof typeof colorClasses]}`}>
+        <div
+          className={`p-6 border-b border-white/5 ${colorClasses[msg.color as keyof typeof colorClasses]}`}
+        >
           <div className="flex items-start gap-3">
             <AlertCircle size={24} className="flex-shrink-0 mt-0.5" />
             <h2 className="text-lg font-semibold">{msg.title}</h2>
@@ -85,7 +87,9 @@ export default function ActionConfirmModal({
 
         {/* Body */}
         <div className="p-6">
-          <p className="text-foreground/80 leading-relaxed">{msg.description}</p>
+          <p className="text-foreground/80 leading-relaxed">
+            {msg.description}
+          </p>
         </div>
 
         {/* Footer */}

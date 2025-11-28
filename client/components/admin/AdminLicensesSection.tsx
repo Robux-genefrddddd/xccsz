@@ -17,7 +17,9 @@ export default function AdminLicensesSection() {
   const [loading, setLoading] = useState(true);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generatingLicense, setGeneratingLicense] = useState(false);
-  const [planToGenerate, setPlanToGenerate] = useState<"Free" | "Classic" | "Pro">("Pro");
+  const [planToGenerate, setPlanToGenerate] = useState<
+    "Free" | "Classic" | "Pro"
+  >("Pro");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -89,7 +91,9 @@ export default function AdminLicensesSection() {
       toast.success("Licence générée avec succès");
       setShowGenerateModal(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la génération");
+      toast.error(
+        error instanceof Error ? error.message : "Erreur lors de la génération",
+      );
     } finally {
       setGeneratingLicense(false);
     }
@@ -114,7 +118,9 @@ export default function AdminLicensesSection() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-white">Gestion des licences</h2>
+          <h2 className="text-lg font-semibold text-white">
+            Gestion des licences
+          </h2>
           <p className="text-sm text-foreground/60 mt-1">
             {licenses.length} licence{licenses.length !== 1 ? "s" : ""} au total
           </p>
@@ -133,16 +139,29 @@ export default function AdminLicensesSection() {
         <table className="w-full text-sm">
           <thead className="bg-white/[0.05] border-b border-white/5">
             <tr>
-              <th className="px-6 py-4 text-left font-medium text-foreground/70">Clé</th>
-              <th className="px-6 py-4 text-left font-medium text-foreground/70">Plan</th>
-              <th className="px-6 py-4 text-left font-medium text-foreground/70">Statut</th>
-              <th className="px-6 py-4 text-left font-medium text-foreground/70">Utilisateur</th>
-              <th className="px-6 py-4 text-left font-medium text-foreground/70">Actions</th>
+              <th className="px-6 py-4 text-left font-medium text-foreground/70">
+                Clé
+              </th>
+              <th className="px-6 py-4 text-left font-medium text-foreground/70">
+                Plan
+              </th>
+              <th className="px-6 py-4 text-left font-medium text-foreground/70">
+                Statut
+              </th>
+              <th className="px-6 py-4 text-left font-medium text-foreground/70">
+                Utilisateur
+              </th>
+              <th className="px-6 py-4 text-left font-medium text-foreground/70">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
             {licenses.map((license) => (
-              <tr key={license.key} className="hover:bg-white/[0.03] transition-colors">
+              <tr
+                key={license.key}
+                className="hover:bg-white/[0.03] transition-colors"
+              >
                 <td className="px-6 py-4">
                   <code className="text-xs bg-white/10 px-2 py-1 rounded text-amber-400 font-mono">
                     {license.key.substring(0, 20)}...
@@ -210,7 +229,9 @@ export default function AdminLicensesSection() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#1a1a1a] border border-white/10 rounded-lg max-w-md w-full">
             <div className="p-6 border-b border-white/5">
-              <h2 className="text-lg font-semibold text-white">Générer une licence</h2>
+              <h2 className="text-lg font-semibold text-white">
+                Générer une licence
+              </h2>
             </div>
 
             <div className="p-6 space-y-4">
@@ -243,7 +264,9 @@ export default function AdminLicensesSection() {
                 disabled={generatingLicense}
                 className="flex-1 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {generatingLicense && <Loader2 size={16} className="animate-spin" />}
+                {generatingLicense && (
+                  <Loader2 size={16} className="animate-spin" />
+                )}
                 Générer
               </button>
             </div>

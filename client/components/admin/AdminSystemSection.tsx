@@ -56,10 +56,10 @@ export default function AdminSystemSection() {
       // Get all conversations to count messages
       const conversationsSnap = await getDocs(collection(db, "conversations"));
       let totalMessages = 0;
-      
+
       for (const convDoc of conversationsSnap.docs) {
         const messagesSnap = await getDocs(
-          collection(db, "conversations", convDoc.id, "messages")
+          collection(db, "conversations", convDoc.id, "messages"),
         );
         totalMessages += messagesSnap.size;
       }
@@ -67,13 +67,16 @@ export default function AdminSystemSection() {
       // Calculate stats
       const totalUsers = users.length;
       const freeUsers = users.filter((u) => u.plan === "Free").length;
-      const proUsers = users.filter((u) => u.plan === "Classic" || u.plan === "Pro").length;
+      const proUsers = users.filter(
+        (u) => u.plan === "Classic" || u.plan === "Pro",
+      ).length;
       const adminUsers = users.filter((u) => u.isAdmin).length;
-      const avgMessagesPerUser = totalUsers > 0 ? Math.round(totalMessages / totalUsers) : 0;
+      const avgMessagesPerUser =
+        totalUsers > 0 ? Math.round(totalMessages / totalUsers) : 0;
 
       // Generate chart data (last 7 days)
       const chartData = generateChartData(users);
-      
+
       // Plan distribution
       const planDistribution = [
         { name: "Free", value: freeUsers, color: "#64748b" },
@@ -105,11 +108,15 @@ export default function AdminSystemSection() {
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      const dateStr = date.toLocaleDateString("fr-FR", { month: "short", day: "numeric" });
-      
+      const dateStr = date.toLocaleDateString("fr-FR", {
+        month: "short",
+        day: "numeric",
+      });
+
       // Simulate user signups based on actual data
-      const usersOnDay = Math.floor(users.length / 7) + Math.floor(Math.random() * 5);
-      
+      const usersOnDay =
+        Math.floor(users.length / 7) + Math.floor(Math.random() * 5);
+
       data.push({
         day: dateStr,
         users: usersOnDay,
@@ -131,7 +138,9 @@ export default function AdminSystemSection() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-semibold text-white">Vue d'ensemble système</h2>
+        <h2 className="text-lg font-semibold text-white">
+          Vue d'ensemble système
+        </h2>
         <p className="text-sm text-foreground/60 mt-1">
           Analyse des statistiques en temps réel
         </p>
@@ -165,16 +174,24 @@ export default function AdminSystemSection() {
       <div className="grid grid-cols-2 gap-6">
         {/* Growth Chart */}
         <div className="rounded-lg border border-white/5 bg-white/[0.02] p-6">
-          <h3 className="text-sm font-semibold text-white mb-4">Activité récente</h3>
+          <h3 className="text-sm font-semibold text-white mb-4">
+            Activité récente
+          </h3>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={stats.chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="rgba(255,255,255,0.1)"
+              />
               <XAxis
                 dataKey="day"
                 stroke="rgba(255,255,255,0.5)"
                 style={{ fontSize: "12px" }}
               />
-              <YAxis stroke="rgba(255,255,255,0.5)" style={{ fontSize: "12px" }} />
+              <YAxis
+                stroke="rgba(255,255,255,0.5)"
+                style={{ fontSize: "12px" }}
+              />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "rgba(0,0,0,0.8)",
@@ -196,16 +213,24 @@ export default function AdminSystemSection() {
 
         {/* Messages Chart */}
         <div className="rounded-lg border border-white/5 bg-white/[0.02] p-6">
-          <h3 className="text-sm font-semibold text-white mb-4">Messages traités</h3>
+          <h3 className="text-sm font-semibold text-white mb-4">
+            Messages traités
+          </h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={stats.chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="rgba(255,255,255,0.1)"
+              />
               <XAxis
                 dataKey="day"
                 stroke="rgba(255,255,255,0.5)"
                 style={{ fontSize: "12px" }}
               />
-              <YAxis stroke="rgba(255,255,255,0.5)" style={{ fontSize: "12px" }} />
+              <YAxis
+                stroke="rgba(255,255,255,0.5)"
+                style={{ fontSize: "12px" }}
+              />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "rgba(0,0,0,0.8)",
@@ -224,7 +249,9 @@ export default function AdminSystemSection() {
       <div className="grid grid-cols-2 gap-6">
         {/* Plan Distribution */}
         <div className="rounded-lg border border-white/5 bg-white/[0.02] p-6">
-          <h3 className="text-sm font-semibold text-white mb-4">Distribution par plan</h3>
+          <h3 className="text-sm font-semibold text-white mb-4">
+            Distribution par plan
+          </h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
@@ -254,7 +281,9 @@ export default function AdminSystemSection() {
 
         {/* User Breakdown */}
         <div className="rounded-lg border border-white/5 bg-white/[0.02] p-6">
-          <h3 className="text-sm font-semibold text-white mb-6">Répartition des utilisateurs</h3>
+          <h3 className="text-sm font-semibold text-white mb-6">
+            Répartition des utilisateurs
+          </h3>
           <div className="space-y-4">
             <StatRow
               label="Utilisateurs gratuits"
@@ -280,7 +309,8 @@ export default function AdminSystemSection() {
 
       {/* Last Updated */}
       <p className="text-xs text-foreground/50 text-center pt-4">
-        Données mises à jour automatiquement. Dernier chargement: {new Date().toLocaleTimeString("fr-FR")}
+        Données mises à jour automatiquement. Dernier chargement:{" "}
+        {new Date().toLocaleTimeString("fr-FR")}
       </p>
     </div>
   );
@@ -332,7 +362,10 @@ function StatRow({
         </p>
       </div>
       <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-        <div className={`h-full ${color}`} style={{ width: `${percentage}%` }} />
+        <div
+          className={`h-full ${color}`}
+          style={{ width: `${percentage}%` }}
+        />
       </div>
     </div>
   );

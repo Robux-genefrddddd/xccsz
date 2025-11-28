@@ -61,7 +61,9 @@ export default function AdminAIConfigSection() {
       setConfig(tempConfig);
       toast.success("Configuration sauvegardée");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erreur lors de la sauvegarde");
+      toast.error(
+        error instanceof Error ? error.message : "Erreur lors de la sauvegarde",
+      );
     } finally {
       setSaving(false);
     }
@@ -81,7 +83,9 @@ export default function AdminAIConfigSection() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-semibold text-white">Configuration de l'IA</h2>
+        <h2 className="text-lg font-semibold text-white">
+          Configuration de l'IA
+        </h2>
         <p className="text-sm text-foreground/60 mt-1">
           Paramètres du modèle et du comportement
         </p>
@@ -128,7 +132,8 @@ export default function AdminAIConfigSection() {
             className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
           />
           <p className="text-xs text-foreground/60 mt-2">
-            Contrôle le caractère aléatoire des réponses (0 = déterministe, 2 = créatif)
+            Contrôle le caractère aléatoire des réponses (0 = déterministe, 2 =
+            créatif)
           </p>
         </div>
 
