@@ -2,14 +2,17 @@ import { useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { Users, LogOut, Key, Brain, BarChart3, Settings } from "lucide-react";
+import { Users, LogOut, Key, Brain, BarChart3, Settings, Lock } from "lucide-react";
 import { toast } from "sonner";
 import AdminUsersSection from "@/components/admin/AdminUsersSection";
 import AdminLicensesSection from "@/components/admin/AdminLicensesSection";
 import AdminAIConfigSection from "@/components/admin/AdminAIConfigSection";
 import AdminSystemSection from "@/components/admin/AdminSystemSection";
 import AdminMaintenanceSection from "@/components/admin/AdminMaintenanceSection";
+import AdminStats from "@/components/admin/AdminStats";
+import AdminLogs from "@/components/admin/AdminLogs";
 import { useState } from "react";
+import { dsClasses } from "@/lib/design-system";
 
 export default function Admin() {
   const { userData, user } = useAuth();
