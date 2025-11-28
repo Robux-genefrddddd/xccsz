@@ -11,15 +11,14 @@ interface MaintenanceModalProps {
 export type MaintenanceType =
   | "global"
   | "partial"
-  | "ai"
+  | "ia"
   | "licenses"
-  | "auth"
-  | "payments";
+  | "planned";
 
 export interface MaintenanceData {
   type: MaintenanceType;
   message: string;
-  services?: string[];
+  plannedTime?: string;
 }
 
 const MAINTENANCE_OPTIONS = [
@@ -37,28 +36,22 @@ const MAINTENANCE_OPTIONS = [
     color: "amber",
   },
   {
-    id: "ai",
+    id: "ia",
     title: "Maintenance IA",
     description: "Désactiver le service IA temporairement",
-    color: "blue",
+    color: "purple",
   },
   {
     id: "licenses",
     title: "Maintenance licences",
     description: "Désactiver la gestion des licences",
-    color: "purple",
+    color: "rose",
   },
   {
-    id: "auth",
-    title: "Maintenance authentification",
-    description: "Problèmes avec l'authentification",
-    color: "green",
-  },
-  {
-    id: "payments",
-    title: "Maintenance paiements",
-    description: "Système de paiement indisponible",
-    color: "yellow",
+    id: "planned",
+    title: "Maintenance planifiée",
+    description: "Annoncer une maintenance future",
+    color: "blue",
   },
 ];
 
@@ -70,6 +63,7 @@ export default function MaintenanceModal({
 }: MaintenanceModalProps) {
   const [selectedType, setSelectedType] = useState<MaintenanceType>("global");
   const [message, setMessage] = useState("");
+  const [plannedTime, setPlannedTime] = useState("");
   const [confirming, setConfirming] = useState(false);
 
   if (!isOpen) return null;
@@ -84,8 +78,10 @@ export default function MaintenanceModal({
       await onConfirm(selectedType, {
         type: selectedType,
         message,
+        plannedTime,
       });
       setMessage("");
+      setPlannedTime("");
       setSelectedType("global");
       onClose();
     } finally {
@@ -101,7 +97,7 @@ export default function MaintenanceModal({
             <div>
               <h2 className="text-lg font-semibold text-white">Maintenance</h2>
               <p className="text-sm text-foreground/60 mt-1">
-                Sélectionnez un type de maintenance
+                Sélectionnez un type de maintenance à activer
               </p>
             </div>
             <button
@@ -150,9 +146,24 @@ export default function MaintenanceModal({
 
           {selectedOption && (
             <div className="space-y-4 pt-6 border-t border-white/5">
+              {selectedType === "planned" && (
+                <div>
+                  <label className="block text-sm font-medium text-foreground/80 mb-2">
+                    Date et heure prévues
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={plannedTime}
+                    onChange={(e) => setPlannedTime(e.target.value)}
+                    disabled={isLoading || confirming}
+                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white hover:border-white/20 transition-colors focus:outline-none focus:border-white/30 disabled:opacity-50"
+                  />
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-foreground/80 mb-2">
-                  Message de maintenance (optionnel)
+                  Message de maintenance
                 </label>
                 <textarea
                   value={message}
@@ -198,11 +209,11 @@ export default function MaintenanceModal({
           </button>
           <button
             onClick={handleConfirm}
-            disabled={isLoading || confirming}
+            disabled={isLoading || confirming || (selectedType === "planned" && !plannedTime)}
             className="flex-1 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {confirming && <Loader2 size={16} className="animate-spin" />}
-            Activer maintenance
+            Activer la maintenance
           </button>
         </div>
       </div>
