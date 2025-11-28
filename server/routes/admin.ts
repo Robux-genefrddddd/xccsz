@@ -32,12 +32,11 @@ export const handleGetAllUsers: RequestHandler = async (req, res) => {
 
     const users = await FirebaseAdminService.getAllUsers();
 
-    res.json({ success: true, users });
+    return res.json({ success: true, users });
   } catch (error) {
     console.error("Get users error:", error);
-    res.status(401).json({
-      message: error instanceof Error ? error.message : "Operation failed",
-    });
+    const message = error instanceof Error ? error.message : "Operation failed";
+    return res.status(401).json({ success: false, message });
   }
 };
 
