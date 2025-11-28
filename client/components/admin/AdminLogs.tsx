@@ -1,64 +1,16 @@
-import { Clock, User, MoreVertical } from "lucide-react";
+import { useEffect, useState } from "react";
+import { auth } from "@/lib/firebase";
+import { Clock, Loader2 } from "lucide-react";
 import { dsClasses } from "@/lib/design-system";
 
 interface AdminLog {
   id: string;
   action: string;
-  adminEmail: string;
-  targetUser?: string;
-  targetEmail?: string;
+  adminUid: string;
+  data?: Record<string, any>;
   timestamp: Date;
-  details?: string;
   severity: "info" | "warning" | "success" | "error";
 }
-
-const mockLogs: AdminLog[] = [
-  {
-    id: "1",
-    action: "Promotion en admin",
-    adminEmail: "admin@keysystem.io",
-    targetEmail: "alice.smith@gmail.com",
-    timestamp: new Date(Date.now() - 5 * 60000),
-    details: "Utilisateur promu administrateur",
-    severity: "success",
-  },
-  {
-    id: "2",
-    action: "Création de licence",
-    adminEmail: "admin@keysystem.io",
-    targetEmail: "LIC-8XYZ9K",
-    timestamp: new Date(Date.now() - 15 * 60000),
-    details: "Licence Pro créée – 365 jours de validité",
-    severity: "success",
-  },
-  {
-    id: "3",
-    action: "Bannissement utilisateur",
-    adminEmail: "admin@keysystem.io",
-    targetEmail: "spammer@test.com",
-    timestamp: new Date(Date.now() - 45 * 60000),
-    details: "Raison: Contenu inapproprié",
-    severity: "warning",
-  },
-  {
-    id: "4",
-    action: "Réinitialisation messages",
-    adminEmail: "admin@keysystem.io",
-    targetEmail: "user123@example.com",
-    timestamp: new Date(Date.now() - 2 * 60 * 60000),
-    details: "Compteur de messages réinitialisé",
-    severity: "info",
-  },
-  {
-    id: "5",
-    action: "Suppression de licence",
-    adminEmail: "admin@keysystem.io",
-    targetEmail: "LIC-3ABC7Q",
-    timestamp: new Date(Date.now() - 3 * 60 * 60000),
-    details: "Licence invalide supprimée",
-    severity: "error",
-  },
-];
 
 function getSeverityColor(severity: "info" | "warning" | "success" | "error") {
   switch (severity) {
@@ -76,7 +28,7 @@ function getSeverityColor(severity: "info" | "warning" | "success" | "error") {
 
 function formatTime(date: Date): string {
   const now = new Date();
-  const diff = (now.getTime() - date.getTime()) / 1000; // seconds
+  const diff = (now.getTime() - date.getTime()) / 1000;
 
   if (diff < 60) return "À l'instant";
   if (diff < 3600) return `Il y a ${Math.floor(diff / 60)}m`;
@@ -91,78 +43,154 @@ function formatTime(date: Date): string {
   });
 }
 
+function getActionLabel(action: string, data?: Record<string, any>): string {
+  const actions: Record<string, string> = {
+    BAN_USER: "Bannissement utilisateur",
+    UNBAN_USER: "Débannissement utilisateur",
+    PROMOTE_USER: "Promotion en admin",
+    DEMOTE_USER: "Rétrogradation admin",
+    UPDATE_USER_PLAN: "Modification du plan",
+    RESET_USER_MESSAGES: "Réinitialisation des messages",
+    DELETE_USER: "Suppression utilisateur",
+    CREATE_LICENSE: "Création de licence",
+    INVALIDATE_LICENSE: "Invalidation de licence",
+    DELETE_LICENSE: "Suppression de licence",
+    UPDATE_AI_CONFIG: "Mise à jour config IA",
+    ENABLE_GLOBAL_MAINTENANCE: "Maintenance globale activée",
+    DISABLE_GLOBAL_MAINTENANCE: "Maintenance globale désactivée",
+    ENABLE_PARTIAL_MAINTENANCE: "Maintenance partielle activée",
+    DISABLE_PARTIAL_MAINTENANCE: "Maintenance partielle désactivée",
+    ENABLE_IA_MAINTENANCE: "Maintenance IA activée",
+    DISABLE_IA_MAINTENANCE: "Maintenance IA désactivée",
+    ENABLE_LICENSE_MAINTENANCE: "Maintenance licences activée",
+    DISABLE_LICENSE_MAINTENANCE: "Maintenance licences désactivée",
+  };
+
+  return actions[action] || action;
+}
+
 export default function AdminLogs() {
+  const [logs, setLogs] = useState<AdminLog[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        setLoading(true);
+        const currentUser = auth.currentUser;
+        if (!currentUser) throw new Error("Non authentifié");
+
+        const idToken = await currentUser.getIdToken();
+        const response = await fetch("/api/admin/logs", {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+
+        if (!response.ok) throw new Error("Erreur lors du chargement");
+
+        const data = await response.json();
+        if (data.success && Array.isArray(data.logs)) {
+          const formattedLogs: AdminLog[] = data.logs.slice(0, 10).map((log: any) => ({
+            id: log.id || Math.random().toString(),
+            action: log.action,
+            adminUid: log.adminUid,
+            data: log.data,
+            timestamp: log.timestamp?.toDate?.() || new Date(log.timestamp),
+            severity: getSeverityFromAction(log.action),
+          }));
+          setLogs(formattedLogs);
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des logs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLogs();
+    const interval = setInterval(fetchLogs, 120000); // Refresh toutes les 2 minutes
+    return () => clearInterval(interval);
+  }, []);
+
+  const getSeverityFromAction = (action: string): "info" | "warning" | "success" | "error" => {
+    if (action.includes("DELETE") || action.includes("BAN")) return "error";
+    if (action.includes("PROMOTE") || action.includes("CREATE") || action.includes("ENABLE")) return "success";
+    if (action.includes("DISABLE") || action.includes("UPDATE")) return "warning";
+    return "info";
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 size={16} className="animate-spin text-white/60" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="space-y-2">
         <h3 className="text-18px font-semibold text-white">Activité récente</h3>
         <p className="text-13px text-white/60">
-          Dernières actions administrateur du système
+          Dernières actions du système
         </p>
       </div>
 
       {/* Logs list */}
       <div className="space-y-2">
-        {mockLogs.map((log, index) => (
-          <div
-            key={log.id}
-            className={`${dsClasses.card} p-4 flex items-start justify-between gap-3 group hover:border-white/10 transition-all duration-150 animate-slideUp`}
-            style={{ animationDelay: `${index * 50}ms` }}
-          >
-            <div className="flex items-start gap-3 flex-1 min-w-0">
-              {/* Severity indicator */}
-              <div
-                className={`w-2 h-10 rounded-full flex-shrink-0 mt-1 ${
-                  log.severity === "success"
-                    ? "bg-emerald-500/50"
-                    : log.severity === "warning"
-                      ? "bg-amber-500/50"
-                      : log.severity === "error"
-                        ? "bg-red-500/50"
-                        : "bg-blue-500/50"
-                }`}
-              />
+        {logs.length === 0 ? (
+          <div className={`${dsClasses.card} p-4 text-center text-white/60 text-13px`}>
+            Aucune activité récente
+          </div>
+        ) : (
+          logs.map((log, index) => (
+            <div
+              key={log.id}
+              className={`${dsClasses.card} p-4 flex items-start justify-between gap-3 group hover:border-white/10 transition-all duration-150 animate-slideUp`}
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                {/* Severity indicator */}
+                <div
+                  className={`w-2 h-10 rounded-full flex-shrink-0 mt-1 ${
+                    log.severity === "success"
+                      ? "bg-emerald-500/50"
+                      : log.severity === "warning"
+                        ? "bg-amber-500/50"
+                        : log.severity === "error"
+                          ? "bg-red-500/50"
+                          : "bg-blue-500/50"
+                  }`}
+                />
 
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                {/* Action title */}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-14px font-semibold text-white">
-                    {log.action}
-                  </span>
-                  {log.targetEmail && (
-                    <span className={`text-11px px-2 py-1 rounded-md border ${getSeverityColor(log.severity)}`}>
-                      {log.targetEmail}
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  {/* Action title */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-14px font-semibold text-white">
+                      {getActionLabel(log.action, log.data)}
                     </span>
-                  )}
-                </div>
-
-                {/* Details */}
-                {log.details && (
-                  <p className="text-13px text-white/70 mt-1">{log.details}</p>
-                )}
-
-                {/* Meta */}
-                <div className="flex items-center gap-3 mt-2 text-11px text-white/50 flex-wrap">
-                  <div className="flex items-center gap-1">
-                    <User size={11} />
-                    <span>{log.adminEmail}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Clock size={11} />
-                    <span>{formatTime(log.timestamp)}</span>
+
+                  {/* Details */}
+                  {log.data && (
+                    <p className="text-13px text-white/70 mt-1">
+                      {log.data.reason || log.data.message || log.data.targetUser || ""}
+                    </p>
+                  )}
+
+                  {/* Meta */}
+                  <div className="flex items-center gap-3 mt-2 text-11px text-white/50 flex-wrap">
+                    <div className="flex items-center gap-1">
+                      <Clock size={11} />
+                      <span>{formatTime(log.timestamp)}</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Menu button */}
-            <button className="p-1.5 text-white/40 hover:text-white/70 hover:bg-white/5 rounded-md transition-colors opacity-0 group-hover:opacity-100">
-              <MoreVertical size={14} />
-            </button>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Footer */}
