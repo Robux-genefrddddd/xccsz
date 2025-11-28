@@ -1,8 +1,5 @@
 import { RequestHandler } from "express";
-import { getAdminDb, initializeFirebaseAdmin } from "../lib/firebase-admin";
-
-// Initialize Firebase Admin on module load
-initializeFirebaseAdmin();
+import { getAdminDb } from "../lib/firebase-admin";
 
 export const handleGetAIConfig: RequestHandler = async (req, res) => {
   try {

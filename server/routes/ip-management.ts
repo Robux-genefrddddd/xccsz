@@ -1,14 +1,7 @@
 import { RequestHandler } from "express";
 import { z } from "zod";
-import {
-  getAdminDb,
-  initializeFirebaseAdmin,
-  isAdminInitialized,
-} from "../lib/firebase-admin";
+import { getAdminDb, isAdminInitialized } from "../lib/firebase-admin";
 import { Timestamp } from "firebase-admin/firestore";
-
-// Initialize Firebase Admin on module load
-initializeFirebaseAdmin();
 
 /**
  * Validation schemas for IP management endpoints

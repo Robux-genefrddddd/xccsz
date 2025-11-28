@@ -64,43 +64,74 @@ export class AIService {
         throw new Error("Not authenticated. Please log in again.");
       }
 
-      const response = await fetch("/api/ai/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          idToken,
-          userMessage,
-          conversationHistory,
-          model: config.model,
-          temperature: config.temperature,
-          maxTokens: config.maxTokens,
-        }),
-      });
+      let response: Response;
+      try {
+        response = await fetch("/api/ai/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            idToken,
+            userMessage,
+            conversationHistory,
+            model: config.model,
+            temperature: config.temperature,
+            maxTokens: config.maxTokens,
+          }),
+        });
+      } catch (fetchError) {
+        console.error("Fetch request failed:", fetchError);
+        throw new Error("Erreur réseau: impossible de contacter le serveur");
+      }
 
-      // Try to parse response body as text first, then JSON
+      // Check if response exists and has a body
+      if (!response || !response.body) {
+        console.error("Response has no body");
+        throw new Error("Erreur serveur: pas de réponse");
+      }
+
+      // Read response status first (doesn't consume body)
+      const status = response.status;
+      const ok = response.ok;
+
+      // Now read the body
       let responseText: string;
       try {
         responseText = await response.text();
-      } catch (error) {
-        console.error("Failed to read response:", error);
+      } catch (readError) {
+        console.error("Failed to read response body:", readError);
+        // Try to provide more info
+        if (
+          readError instanceof TypeError &&
+          readError.message.includes("body stream already read")
+        ) {
+          console.warn(
+            "Response body was already consumed - possible middleware interference",
+          );
+        }
         throw new Error("Erreur serveur: impossible de lire la réponse");
       }
 
+      // Validate we got some response
+      if (!responseText) {
+        console.error("Response text is empty");
+        throw new Error("Erreur serveur: réponse vide");
+      }
+
+      // Parse JSON from text
       let data: any;
       try {
         data = JSON.parse(responseText);
       } catch (parseError) {
-        console.error("Failed to parse response JSON:", parseError);
-        console.error("Response was:", responseText.substring(0, 500));
-        throw new Error(
-          `Erreur serveur: réponse invalide (${responseText.substring(0, 50)}...)`,
-        );
+        console.error("Failed to parse JSON:", parseError);
+        console.error("Response text:", responseText.substring(0, 500));
+        throw new Error("Erreur serveur: réponse invalide");
       }
 
-      if (!response.ok) {
-        const errorMessage = data?.error || `API error: ${response.status}`;
+      // Check HTTP status
+      if (!ok) {
+        const errorMessage = data?.error || `API error: ${status}`;
         throw new Error(errorMessage);
       }
 

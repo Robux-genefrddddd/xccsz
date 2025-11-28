@@ -105,47 +105,70 @@ export const handleAIChat: RequestHandler = async (req, res) => {
       });
     }
 
-    // Call OpenRouter API
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": process.env.APP_URL || "http://localhost:5173",
-          "X-Title": "Chat AI",
+    // Call OpenRouter API with timeout
+    let openrouterResponse: Response;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
+      openrouterResponse = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": process.env.APP_URL || "http://localhost:5173",
+            "X-Title": "Chat AI",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              {
+                role: "system",
+                content:
+                  "Tu es un assistant utile et amical. Réponds toujours en français.",
+              },
+              ...conversationHistory.map((msg) => ({
+                role: msg.role,
+                content: msg.content,
+              })),
+              {
+                role: "user",
+                content: userMessage,
+              },
+            ],
+            temperature,
+            max_tokens: maxTokens,
+          }),
+          signal: controller.signal,
         },
-        body: JSON.stringify({
-          model,
-          messages: [
-            {
-              role: "system",
-              content:
-                "Tu es un assistant utile et amical. Réponds toujours en français.",
-            },
-            ...conversationHistory.map((msg) => ({
-              role: msg.role,
-              content: msg.content,
-            })),
-            {
-              role: "user",
-              content: userMessage,
-            },
-          ],
-          temperature,
-          max_tokens: maxTokens,
-        }),
-      },
-    );
+      );
+      clearTimeout(timeout);
+    } catch (fetchError) {
+      console.error("OpenRouter API fetch error:", fetchError);
+      return res.status(503).json({
+        error:
+          fetchError instanceof Error && fetchError.name === "AbortError"
+            ? "AI service request timed out"
+            : "Failed to connect to AI service",
+      });
+    }
 
     let responseText: string;
     try {
-      responseText = await response.text();
+      responseText = await openrouterResponse.text();
     } catch (readError) {
       console.error("Failed to read OpenRouter response:", readError);
-      return res.status(500).json({
+      return res.status(502).json({
         error: "Failed to read response from AI service",
+      });
+    }
+
+    if (!responseText) {
+      console.error("OpenRouter returned empty response");
+      return res.status(502).json({
+        error: "Empty response from AI service",
       });
     }
 
@@ -155,14 +178,14 @@ export const handleAIChat: RequestHandler = async (req, res) => {
     } catch (parseError) {
       console.error("Failed to parse OpenRouter response:", parseError);
       console.error("Response text:", responseText.substring(0, 500));
-      return res.status(500).json({
+      return res.status(502).json({
         error: "Invalid response from AI service",
       });
     }
 
-    if (!response.ok) {
+    if (!openrouterResponse.ok) {
       console.error("OpenRouter API error:", data);
-      return res.status(response.status).json({
+      return res.status(openrouterResponse.status).json({
         error: data?.error?.message || data?.error || "OpenRouter API error",
       });
     }
@@ -179,11 +202,21 @@ export const handleAIChat: RequestHandler = async (req, res) => {
       // Log but don't fail the response - user got their answer
     }
 
-    return res.json({
+    // Prepare response
+    const responseData = {
       content,
       messagesUsed: messagesUsed + 1,
       messagesLimit,
-    });
+    };
+
+    // Set explicit headers to prevent proxy issues
+    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.set("Content-Type", "application/json");
+    res.set("X-Content-Type-Options", "nosniff");
+
+    // Send response with explicit status
+    res.status(200);
+    return res.json(responseData);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
