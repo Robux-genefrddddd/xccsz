@@ -48,33 +48,6 @@ export default function Index() {
     }
   }, [userBan]);
 
-  useEffect(() => {
-    // Update disclaimer state when userData changes
-    if (userData?.disclaimerAccepted) {
-      setDisclaimerAccepted(true);
-    }
-  }, [userData?.disclaimerAccepted]);
-
-  const handleDisclaimerAccept = async () => {
-    try {
-      if (user?.uid) {
-        const userRef = doc(db, "users", user.uid);
-        await updateDoc(userRef, {
-          disclaimerAccepted: true,
-          disclaimerAcceptedAt: Date.now(),
-        });
-        setDisclaimerAccepted(true);
-      }
-    } catch (error) {
-      console.error("Error accepting disclaimer:", error);
-      toast.error("Erreur lors de l'enregistrement du disclaimer");
-    }
-  };
-
-  const handleDisclaimerDecline = () => {
-    signOut(auth).catch(console.error);
-  };
-
   if (loading) {
     return (
       <div className="flex h-screen bg-background items-center justify-center transition-colors duration-300">
