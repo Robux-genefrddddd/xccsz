@@ -7,8 +7,6 @@ import { handleActivateLicense } from "./routes/license";
 import { handleDailyReset } from "./routes/daily-reset";
 import {
   handleAIChat,
-  handleGetAIConfig,
-  handleUpdateAIConfig,
 } from "./routes/ai";
 import {
   handleVerifyAdmin,
@@ -24,8 +22,8 @@ import {
   handleGetLicenses,
   handleCreateLicense,
   handleInvalidateLicense,
-  handleGetAIConfig,
-  handleUpdateAIConfig,
+  handleGetAIConfig as handleGetAIConfigAdmin,
+  handleUpdateAIConfig as handleUpdateAIConfigAdmin,
   handleGetSystemStats,
   handlePurgeLicenses,
   handleGetAdminLogs,
