@@ -78,14 +78,11 @@ export function ChatInput({
       style={{
         padding: "14px 18px",
         borderRadius: "16px",
-        background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.6)",
+        background: isDark ? "rgba(0,0,0,0.25)" : "rgba(255,255,255,0.6)",
         backdropFilter: "blur(8px)",
         border: isDark
-          ? "1px solid rgba(255,255,255,0.08)"
+          ? "1px solid rgba(255,255,255,0.05)"
           : "1px solid rgba(255,255,255,0.2)",
-        boxShadow: isDark
-          ? "0 4px 14px rgba(0,0,0,0.4)"
-          : "0 2px 8px rgba(0,0,0,0.06)",
         transition: "all 200ms ease",
       }}
     >

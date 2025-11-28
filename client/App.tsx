@@ -31,6 +31,7 @@ import { BanModal } from "@/components/BanModal";
 import TOSModal from "@/components/TOSModal";
 import MaintenanceScreen from "@/components/MaintenanceScreen";
 import MaintenanceBanner from "@/components/MaintenanceBanner";
+import { BackgroundPlusPattern } from "@/components/ui/BackgroundPlusPattern";
 
 const queryClient = new QueryClient();
 
@@ -87,7 +88,12 @@ function MaintenanceCheckWrapper({ children }: { children: React.ReactNode }) {
     return <MaintenanceScreen />;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <BackgroundPlusPattern />
+      {children}
+    </>
+  );
 }
 
 function AppRoutes() {

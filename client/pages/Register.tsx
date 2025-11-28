@@ -230,7 +230,7 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[#0a0a0a]">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-transparent">
       {/* Premium Background with Gradient + Blur + Noise */}
       <div className="absolute inset-0 z-0">
         {/* Radial gradient spotlight effect */}

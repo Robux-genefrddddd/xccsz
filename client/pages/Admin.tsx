@@ -59,9 +59,9 @@ export default function Admin() {
   ] as const;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-transparent">
       {/* Professional Header */}
-      <header className="border-b border-white/5 bg-gradient-to-b from-[#0f0f0f] to-[#0a0a0a]">
+      <header className="border-b border-white/5 bg-gradient-to-b from-[#0f0f0f]/50 to-transparent">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-start justify-between gap-4">
             {/* Header Content */}
@@ -96,7 +96,7 @@ export default function Admin() {
       </header>
 
       {/* Professional Navigation Tabs */}
-      <div className="border-b border-white/5 bg-[#0a0a0a] sticky top-0 z-40">
+      <div className="border-b border-white/5 bg-transparent sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6">
           <nav className="flex gap-1 overflow-x-auto scrollbar-none">
             {tabs.map((tab) => {

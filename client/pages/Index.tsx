@@ -104,7 +104,7 @@ export default function Index() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-transparent">
       {/* Sidebar - Hidden by default, opens as drawer on hamburger click */}
       <Sidebar
         isOpen={sidebarOpen}

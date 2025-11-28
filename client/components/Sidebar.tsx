@@ -39,6 +39,8 @@ interface Conversation {
   createdAt?: Date;
   updatedAt?: Date;
   messageCount?: number;
+  isTemporary?: boolean;
+  titleJustUpdated?: boolean;
 }
 
 interface SidebarProps {
@@ -112,21 +114,19 @@ export function Sidebar({
   const handleNewConversation = async () => {
     if (!user?.uid) return;
     try {
-      const conversationRef = await MessagesService.createConversation(
-        user.uid,
-        "Nouvelle conversation",
-      );
+      // Create conversation locally first with temporary title
+      const tempId = `temp_${Date.now()}`;
       const newConversation: Conversation = {
-        id: conversationRef.id,
+        id: tempId,
         name: "Nouvelle conversation",
         active: true,
+        isTemporary: true,
         createdAt: new Date(),
         updatedAt: new Date(),
         messageCount: 0,
       };
       setConversations([newConversation, ...conversations]);
-      onConversationSelect?.(conversationRef.id);
-      toast.success("Conversation créée");
+      onConversationSelect?.(tempId);
     } catch (error) {
       console.error("Error creating conversation:", error);
       toast.error("Erreur lors de la création de la conversation");
@@ -290,22 +290,22 @@ export function Sidebar({
                   </button>
                 </PopoverTrigger>
                 <PopoverContent
-                  className={`w-40 p-1 border rounded-lg shadow-lg transition-all duration-300 ${
+                  className={`w-48 p-2 border rounded-xl shadow-2xl transition-all duration-300 backdrop-blur-md ${
                     isDark
-                      ? "bg-card border-white/[0.1]"
+                      ? "bg-[#0a0a0a] border-white/[0.08]"
                       : "bg-[#FAFAFA] border-black/[0.08]"
                   }`}
                 >
-                  <div className="space-y-0.5">
+                  <div className="space-y-1">
                     <button
                       onClick={() => {
                         setIsSettingsOpen(true);
                         setIsMenuOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all hover:-translate-y-0.5 ${
+                      className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                         isDark
-                          ? "text-foreground/70 hover:text-foreground hover:bg-white/[0.08]"
-                          : "text-[#3F3F3F]/70 hover:text-[#1A1A1A] hover:bg-black/[0.08]"
+                          ? "text-foreground/80 hover:text-foreground hover:bg-white/[0.12]"
+                          : "text-[#3F3F3F]/80 hover:text-[#1A1A1A] hover:bg-black/[0.08]"
                       }`}
                     >
                       Paramètres
@@ -315,10 +315,10 @@ export function Sidebar({
                         setIsHelpOpen(true);
                         setIsMenuOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all hover:-translate-y-0.5 ${
+                      className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                         isDark
-                          ? "text-foreground/70 hover:text-foreground hover:bg-white/[0.08]"
-                          : "text-[#3F3F3F]/70 hover:text-[#1A1A1A] hover:bg-black/[0.08]"
+                          ? "text-foreground/80 hover:text-foreground hover:bg-white/[0.12]"
+                          : "text-[#3F3F3F]/80 hover:text-[#1A1A1A] hover:bg-black/[0.08]"
                       }`}
                     >
                       Aide
@@ -335,13 +335,13 @@ export function Sidebar({
                             navigate("/admin");
                             setIsMenuOpen(false);
                           }}
-                          className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all hover:-translate-y-0.5 text-primary ${
+                          className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-primary ${
                             isDark
-                              ? "hover:bg-white/[0.08]"
-                              : "hover:bg-black/[0.08]"
+                              ? "hover:bg-primary/[0.15]"
+                              : "hover:bg-primary/[0.1]"
                           }`}
                         >
-                          Admin
+                          Admin Panel
                         </button>
                       </>
                     )}

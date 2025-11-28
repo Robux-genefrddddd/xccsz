@@ -13,6 +13,7 @@ import {
   RateLimiter,
   escapeHtml,
 } from "@/lib/security";
+import { generateConversationTitle } from "@/lib/utils";
 import { toast } from "sonner";
 import { MessageRenderer } from "@/components/MessageRenderer";
 import { ThinkingAnimation } from "@/components/ThinkingAnimation";
@@ -28,9 +29,13 @@ interface ChatMessage {
 
 interface ChatAreaProps {
   conversationId?: string;
+  onConversationCreate?: (newId: string) => void;
 }
 
-export function ChatArea({ conversationId }: ChatAreaProps) {
+export function ChatArea({
+  conversationId,
+  onConversationCreate,
+}: ChatAreaProps) {
   const { user, userData } = useAuth();
   const { isDark } = useTheme();
   const [message, setMessage] = useState("");
@@ -45,6 +50,7 @@ export function ChatArea({ conversationId }: ChatAreaProps) {
   const [blocks, setBlocks] = useState<string[]>([]);
   const [renderedBlockCount, setRenderedBlockCount] = useState(0);
   const [isRenderingBlocks, setIsRenderingBlocks] = useState(false);
+  const [isFirstMessage, setIsFirstMessage] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const blockIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -444,7 +450,7 @@ export function ChatArea({ conversationId }: ChatAreaProps) {
       id="chat-area"
       className="flex-1 flex flex-col min-h-0 transition-colors duration-300"
       style={{
-        backgroundColor: isDark ? "#0e0e0e" : "#F3F4F6",
+        backgroundColor: isDark ? "transparent" : "#F3F4F6",
       }}
     >
       {/* Main Content Area - Messages Container */}
@@ -719,7 +725,7 @@ export function ChatArea({ conversationId }: ChatAreaProps) {
       <div
         className="w-full px-6 md:px-8 py-5 transition-colors duration-300"
         style={{
-          backgroundColor: isDark ? "#0e0e0e" : "#F3F4F6",
+          backgroundColor: "transparent",
           animation: "fadeIn 200ms ease-out",
         }}
       >
