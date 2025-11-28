@@ -661,4 +661,108 @@ export class FirebaseAdminService {
 
     await this.logAdminAction(adminUid, "DISABLE_PARTIAL_MAINTENANCE", {});
   }
+
+  // Enable IA service maintenance
+  static async enableIAMaintenance(adminUid: string, message: string = "") {
+    if (!adminDb) throw new Error("Database not initialized");
+
+    const currentDoc = await adminDb.collection("settings").doc("maintenance").get();
+    const currentData = currentDoc.exists ? currentDoc.data() : {};
+
+    await adminDb.collection("settings").doc("maintenance").set({
+      ...currentData,
+      ia: true,
+      message: message || "Le service IA est temporairement indisponible",
+      updatedAt: Timestamp.now(),
+      enabledBy: adminUid,
+    });
+
+    await this.logAdminAction(adminUid, "ENABLE_IA_MAINTENANCE", { message });
+  }
+
+  // Disable IA service maintenance
+  static async disableIAMaintenance(adminUid: string) {
+    if (!adminDb) throw new Error("Database not initialized");
+
+    const currentDoc = await adminDb.collection("settings").doc("maintenance").get();
+    const currentData = currentDoc.exists ? currentDoc.data() : {};
+
+    await adminDb.collection("settings").doc("maintenance").set({
+      ...currentData,
+      ia: false,
+      updatedAt: Timestamp.now(),
+    });
+
+    await this.logAdminAction(adminUid, "DISABLE_IA_MAINTENANCE", {});
+  }
+
+  // Enable License service maintenance
+  static async enableLicenseMaintenance(adminUid: string, message: string = "") {
+    if (!adminDb) throw new Error("Database not initialized");
+
+    const currentDoc = await adminDb.collection("settings").doc("maintenance").get();
+    const currentData = currentDoc.exists ? currentDoc.data() : {};
+
+    await adminDb.collection("settings").doc("maintenance").set({
+      ...currentData,
+      license: true,
+      message: message || "Le service de gestion des licences est en maintenance",
+      updatedAt: Timestamp.now(),
+      enabledBy: adminUid,
+    });
+
+    await this.logAdminAction(adminUid, "ENABLE_LICENSE_MAINTENANCE", { message });
+  }
+
+  // Disable License service maintenance
+  static async disableLicenseMaintenance(adminUid: string) {
+    if (!adminDb) throw new Error("Database not initialized");
+
+    const currentDoc = await adminDb.collection("settings").doc("maintenance").get();
+    const currentData = currentDoc.exists ? currentDoc.data() : {};
+
+    await adminDb.collection("settings").doc("maintenance").set({
+      ...currentData,
+      license: false,
+      updatedAt: Timestamp.now(),
+    });
+
+    await this.logAdminAction(adminUid, "DISABLE_LICENSE_MAINTENANCE", {});
+  }
+
+  // Enable Planned maintenance
+  static async enablePlannedMaintenance(adminUid: string, plannedTime: string, message: string = "") {
+    if (!adminDb) throw new Error("Database not initialized");
+
+    const currentDoc = await adminDb.collection("settings").doc("maintenance").get();
+    const currentData = currentDoc.exists ? currentDoc.data() : {};
+
+    await adminDb.collection("settings").doc("maintenance").set({
+      ...currentData,
+      planned: true,
+      plannedTime,
+      message: message || "Une maintenance est prévue",
+      updatedAt: Timestamp.now(),
+      enabledBy: adminUid,
+    });
+
+    await this.logAdminAction(adminUid, "ENABLE_PLANNED_MAINTENANCE", { plannedTime, message });
+  }
+
+  // Disable Planned maintenance
+  static async disablePlannedMaintenance(adminUid: string) {
+    if (!adminDb) throw new Error("Database not initialized");
+
+    const currentDoc = await adminDb.collection("settings").doc("maintenance").get();
+    const currentData = currentDoc.exists ? currentDoc.data() : {};
+
+    await adminDb.collection("settings").doc("maintenance").set({
+      ...currentData,
+      planned: false,
+      plannedTime: null,
+      updatedAt: Timestamp.now(),
+    });
+
+    await this.logAdminAction(adminUid, "DISABLE_PLANNED_MAINTENANCE", {});
+  }
 }
