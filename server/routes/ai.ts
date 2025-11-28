@@ -179,6 +179,10 @@ export const handleAIChat: RequestHandler = async (req, res) => {
       // Log but don't fail the response - user got their answer
     }
 
+    // Set explicit headers to prevent proxy issues
+    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.set("Content-Type", "application/json");
+
     return res.json({
       content,
       messagesUsed: messagesUsed + 1,
