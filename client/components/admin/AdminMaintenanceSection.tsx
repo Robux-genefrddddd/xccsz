@@ -465,6 +465,13 @@ export default function AdminMaintenanceSection() {
           </div>
         </div>
       )}
+
+      <MaintenanceModal
+        isOpen={showMaintenanceModal}
+        onClose={() => setShowMaintenanceModal(false)}
+        onConfirm={handleMaintenanceConfirm}
+        isLoading={loading !== null}
+      />
     </div>
   );
 }
