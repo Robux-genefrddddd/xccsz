@@ -188,11 +188,12 @@ export const handleAIChat: RequestHandler = async (req, res) => {
 
     // Set explicit headers to prevent proxy issues
     res.set("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.set("Content-Type", "application/json; charset=utf-8");
-    res.set("Content-Length", JSON.stringify(responseData).length.toString());
+    res.set("Content-Type", "application/json");
+    res.set("X-Content-Type-Options", "nosniff");
 
-    // Send response
-    return res.status(200).json(responseData);
+    // Send response with explicit status
+    res.status(200);
+    return res.json(responseData);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
