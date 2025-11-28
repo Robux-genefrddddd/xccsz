@@ -2,7 +2,15 @@ import { useState, useEffect } from "react";
 import { auth } from "@/lib/firebase";
 import { UserData } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Loader2, Shield, User, Ban, RotateCcw, Trash2 } from "lucide-react";
+import {
+  Loader2,
+  Shield,
+  User,
+  Ban,
+  RotateCcw,
+  Trash2,
+  ChevronDown,
+} from "lucide-react";
 import ActionConfirmModal from "./ActionConfirmModal";
 
 export default function AdminUsersSection() {
@@ -10,10 +18,12 @@ export default function AdminUsersSection() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
-    type: "promote" | "demote" | "ban" | "unban" | "reset" | "delete";
+    type: "promote" | "demote" | "ban" | "unban" | "reset" | "delete" | "plan";
     userId: string;
     email: string;
+    plan?: "Free" | "Classic" | "Pro";
   } | null>(null);
+  const [expandedUser, setExpandedUser] = useState<string | null>(null);
 
   useEffect(() => {
     loadUsers();
@@ -53,7 +63,7 @@ export default function AdminUsersSection() {
   const executeAction = async () => {
     if (!confirmAction) return;
 
-    const { type, userId, email } = confirmAction;
+    const { type, userId, email, plan } = confirmAction;
     setActionLoading(userId);
 
     try {
@@ -74,7 +84,7 @@ export default function AdminUsersSection() {
           break;
         case "ban":
           endpoint = "/api/admin/ban-user";
-          body.reason = "Banned by admin";
+          body.reason = "Banned by administrator";
           break;
         case "unban":
           endpoint = "/api/admin/unban-user";
@@ -84,6 +94,10 @@ export default function AdminUsersSection() {
           break;
         case "delete":
           endpoint = "/api/admin/delete-user";
+          break;
+        case "plan":
+          endpoint = "/api/admin/update-user-plan";
+          body.plan = plan;
           break;
       }
 
@@ -107,7 +121,6 @@ export default function AdminUsersSection() {
         throw new Error(data.message || "Action failed");
       }
 
-      // Update local state
       setUsers((prev) =>
         prev.map((u) => {
           if (u.uid !== userId) return u;
@@ -119,6 +132,13 @@ export default function AdminUsersSection() {
               return { ...u, isAdmin: false };
             case "reset":
               return { ...u, messagesUsed: 0 };
+            case "plan":
+              const planLimits: Record<string, number> = {
+                Free: 10,
+                Classic: 100,
+                Pro: 1000,
+              };
+              return { ...u, plan: plan as any, messagesLimit: planLimits[plan || "Free"] };
             default:
               return u;
           }
@@ -132,6 +152,7 @@ export default function AdminUsersSection() {
         unban: "Utilisateur débanni",
         reset: "Messages réinitialisés",
         delete: "Utilisateur supprimé",
+        plan: "Plan d'utilisateur modifié",
       };
 
       toast.success(messages[type]);
@@ -191,139 +212,197 @@ export default function AdminUsersSection() {
           color="emerald"
         />
         <StatCard
-          label="Plan Free"
-          value={users.filter((u) => u.plan === "Free").length.toString()}
-          color="slate"
+          label="Bannies"
+          value={users.filter((u) => (u as any).isBanned).length.toString()}
+          color="red"
         />
       </div>
 
-      {/* Users Table */}
+      {/* Users List */}
       <div className="rounded-lg border border-white/5 overflow-hidden bg-white/[0.02]">
-        <table className="w-full text-sm">
-          <thead className="bg-white/[0.05] border-b border-white/5">
-            <tr>
-              <th className="px-6 py-4 text-left font-medium text-foreground/70 whitespace-nowrap">
-                Email
-              </th>
-              <th className="px-6 py-4 text-left font-medium text-foreground/70 whitespace-nowrap">
-                Plan
-              </th>
-              <th className="px-6 py-4 text-left font-medium text-foreground/70 whitespace-nowrap">
-                Messages
-              </th>
-              <th className="px-6 py-4 text-left font-medium text-foreground/70 whitespace-nowrap">
-                Statut
-              </th>
-              <th className="px-6 py-4 text-left font-medium text-foreground/70 whitespace-nowrap">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
+        {users.length === 0 ? (
+          <div className="px-6 py-12 text-center">
+            <p className="text-foreground/60">Aucun utilisateur</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-white/5">
             {users.map((user) => (
-              <tr
+              <div
                 key={user.uid}
                 className="hover:bg-white/[0.03] transition-colors"
               >
-                <td className="px-6 py-4">
-                  <div>
-                    <p className="text-white font-medium">{user.email}</p>
-                    <p className="text-xs text-foreground/50 font-mono mt-1">
-                      {user.uid.substring(0, 12)}...
-                    </p>
+                {/* User Row */}
+                <div
+                  className="px-6 py-4 flex items-center justify-between cursor-pointer"
+                  onClick={() =>
+                    setExpandedUser(
+                      expandedUser === user.uid ? null : user.uid,
+                    )
+                  }
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <p className="text-white font-medium">{user.email}</p>
+                        <p className="text-xs text-foreground/50 font-mono mt-1">
+                          {user.uid.substring(0, 12)}...
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-white/10 text-white">
-                    {user.plan}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-foreground/80">
-                  {user.messagesUsed} / {user.messagesLimit}
-                </td>
-                <td className="px-6 py-4">
-                  <StatusBadge isAdmin={user.isAdmin} />
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    {!user.isAdmin ? (
-                      <ActionButton
-                        icon={Shield}
-                        label="Promouvoir"
-                        color="purple"
-                        loading={actionLoading === user.uid}
-                        onClick={() =>
-                          setConfirmAction({
-                            type: "promote",
-                            userId: user.uid,
-                            email: user.email,
-                          })
-                        }
-                      />
-                    ) : (
-                      <ActionButton
-                        icon={User}
-                        label="Rétrograder"
-                        color="slate"
-                        loading={actionLoading === user.uid}
-                        onClick={() =>
-                          setConfirmAction({
-                            type: "demote",
-                            userId: user.uid,
-                            email: user.email,
-                          })
-                        }
-                      />
-                    )}
-                    <ActionButton
-                      icon={Ban}
-                      label="Bannir"
-                      color="red"
-                      loading={actionLoading === user.uid}
-                      onClick={() =>
-                        setConfirmAction({
-                          type: "ban",
-                          userId: user.uid,
-                          email: user.email,
-                        })
-                      }
-                    />
-                    <ActionButton
-                      icon={RotateCcw}
-                      label="Réinit."
-                      color="amber"
-                      loading={actionLoading === user.uid}
-                      onClick={() =>
-                        setConfirmAction({
-                          type: "reset",
-                          userId: user.uid,
-                          email: user.email,
-                        })
-                      }
-                    />
-                    <ActionButton
-                      icon={Trash2}
-                      label="Supprimer"
-                      color="red"
-                      loading={actionLoading === user.uid}
-                      onClick={() =>
-                        setConfirmAction({
-                          type: "delete",
-                          userId: user.uid,
-                          email: user.email,
-                        })
-                      }
-                    />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
 
-        {users.length === 0 && (
-          <div className="px-6 py-12 text-center">
-            <p className="text-foreground/60">Aucun utilisateur</p>
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-white/10 text-white">
+                        {user.plan}
+                      </span>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-foreground/80 text-sm">
+                        {user.messagesUsed} / {user.messagesLimit}
+                      </p>
+                      <p className="text-xs text-foreground/50">Messages</p>
+                    </div>
+
+                    <StatusBadge
+                      isAdmin={user.isAdmin}
+                      isBanned={(user as any).isBanned}
+                    />
+
+                    <ChevronDown
+                      size={20}
+                      className={`text-foreground/60 transition-transform ${expandedUser === user.uid ? "rotate-180" : ""}`}
+                    />
+                  </div>
+                </div>
+
+                {/* Expanded Actions */}
+                {expandedUser === user.uid && (
+                  <div className="px-6 py-4 bg-white/[0.02] border-t border-white/5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {!user.isAdmin ? (
+                        <ActionButton
+                          icon={Shield}
+                          label="Promouvoir"
+                          color="purple"
+                          loading={actionLoading === user.uid}
+                          onClick={() =>
+                            setConfirmAction({
+                              type: "promote",
+                              userId: user.uid,
+                              email: user.email,
+                            })
+                          }
+                        />
+                      ) : (
+                        <ActionButton
+                          icon={User}
+                          label="Rétrograder"
+                          color="slate"
+                          loading={actionLoading === user.uid}
+                          onClick={() =>
+                            setConfirmAction({
+                              type: "demote",
+                              userId: user.uid,
+                              email: user.email,
+                            })
+                          }
+                        />
+                      )}
+
+                      {!(user as any).isBanned ? (
+                        <ActionButton
+                          icon={Ban}
+                          label="Bannir"
+                          color="red"
+                          loading={actionLoading === user.uid}
+                          onClick={() =>
+                            setConfirmAction({
+                              type: "ban",
+                              userId: user.uid,
+                              email: user.email,
+                            })
+                          }
+                        />
+                      ) : (
+                        <ActionButton
+                          icon={Ban}
+                          label="Débannir"
+                          color="amber"
+                          loading={actionLoading === user.uid}
+                          onClick={() =>
+                            setConfirmAction({
+                              type: "unban",
+                              userId: user.uid,
+                              email: user.email,
+                            })
+                          }
+                        />
+                      )}
+
+                      <ActionButton
+                        icon={RotateCcw}
+                        label="Réinit. messages"
+                        color="amber"
+                        loading={actionLoading === user.uid}
+                        onClick={() =>
+                          setConfirmAction({
+                            type: "reset",
+                            userId: user.uid,
+                            email: user.email,
+                          })
+                        }
+                      />
+
+                      <ActionButton
+                        icon={Trash2}
+                        label="Supprimer"
+                        color="red"
+                        loading={actionLoading === user.uid}
+                        onClick={() =>
+                          setConfirmAction({
+                            type: "delete",
+                            userId: user.uid,
+                            email: user.email,
+                          })
+                        }
+                      />
+                    </div>
+
+                    {/* Plan Selection */}
+                    <div className="mt-4 pt-4 border-t border-white/5">
+                      <p className="text-xs font-medium text-foreground/70 mb-3">
+                        Modifier le plan
+                      </p>
+                      <div className="flex items-center gap-2">
+                        {(["Free", "Classic", "Pro"] as const).map((p) => (
+                          <button
+                            key={p}
+                            onClick={() =>
+                              setConfirmAction({
+                                type: "plan",
+                                userId: user.uid,
+                                email: user.email,
+                                plan: p,
+                              })
+                            }
+                            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                              user.plan === p
+                                ? "bg-blue-500 text-white"
+                                : "bg-white/10 hover:bg-white/20 text-foreground/80"
+                            }`}
+                            disabled={actionLoading === user.uid}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -349,12 +428,13 @@ function StatCard({
 }: {
   label: string;
   value: string;
-  color: "blue" | "purple" | "emerald" | "slate";
+  color: "blue" | "purple" | "emerald" | "red" | "slate";
 }) {
   const colors = {
     blue: "bg-blue-500/10 border-blue-500/20 text-blue-400",
     purple: "bg-purple-500/10 border-purple-500/20 text-purple-400",
     emerald: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400",
+    red: "bg-red-500/10 border-red-500/20 text-red-400",
     slate: "bg-slate-500/10 border-slate-500/20 text-slate-400",
   };
 
@@ -368,7 +448,22 @@ function StatCard({
   );
 }
 
-function StatusBadge({ isAdmin }: { isAdmin: boolean }) {
+function StatusBadge({
+  isAdmin,
+  isBanned,
+}: {
+  isAdmin: boolean;
+  isBanned?: boolean;
+}) {
+  if (isBanned) {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-500/20 text-red-300 border border-red-500/30">
+        <Ban size={12} />
+        Banni
+      </span>
+    );
+  }
+
   return isAdmin ? (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
       <Shield size={12} />
