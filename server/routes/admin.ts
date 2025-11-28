@@ -1,8 +1,6 @@
 import { RequestHandler } from "express";
 import { z } from "zod";
-import {
-  FirebaseAdminService,
-} from "../lib/firebase-admin";
+import { FirebaseAdminService } from "../lib/firebase-admin";
 
 // Validation schemas
 const UserIdSchema = z.string().regex(/^[a-zA-Z0-9]{28}$/, "Invalid user ID");
