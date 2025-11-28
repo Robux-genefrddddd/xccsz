@@ -158,16 +158,18 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <ThemeProvider>
-          <TOSProvider>
-            <Sonner />
-            <BrowserRouter
-              future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-            >
-              <AppRoutes />
-            </BrowserRouter>
-          </TOSProvider>
-        </ThemeProvider>
+        <MaintenanceProvider>
+          <ThemeProvider>
+            <TOSProvider>
+              <Sonner />
+              <BrowserRouter
+                future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+              >
+                <AppRoutes />
+              </BrowserRouter>
+            </TOSProvider>
+          </ThemeProvider>
+        </MaintenanceProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
