@@ -38,6 +38,12 @@ export async function handleActivateLicense(req: Request, res: Response) {
     // Get database instance
     const db = getAdminDb();
 
+    if (!db) {
+      return res.status(503).json({
+        error: "Service temporarily unavailable. Firebase not initialized.",
+      });
+    }
+
     // Query Firestore for licenses with matching key
     const licenseQuery = await db
       .collection("licenses")
