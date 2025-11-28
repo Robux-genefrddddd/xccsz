@@ -523,3 +523,133 @@ export const handleDisablePartialMaintenance: RequestHandler = async (
     return res.status(401).json({ success: false, message });
   }
 };
+
+// Enable IA service maintenance
+export const handleEnableIAMaintenance: RequestHandler = async (req, res) => {
+  try {
+    const idToken = extractIdToken(req.headers.authorization);
+    const adminUid = await FirebaseAdminService.verifyAdmin(idToken);
+
+    const { message } = z
+      .object({
+        message: z.string().optional(),
+      })
+      .parse(req.body);
+
+    await FirebaseAdminService.enableIAMaintenance(adminUid, message);
+
+    return res.json({ success: true, message: "IA maintenance enabled" });
+  } catch (error) {
+    console.error("Enable IA maintenance error:", error);
+    const status = error instanceof z.ZodError ? 400 : 401;
+    const message = error instanceof Error ? error.message : "Operation failed";
+    return res.status(status).json({ success: false, message });
+  }
+};
+
+// Disable IA service maintenance
+export const handleDisableIAMaintenance: RequestHandler = async (req, res) => {
+  try {
+    const idToken = extractIdToken(req.headers.authorization);
+    const adminUid = await FirebaseAdminService.verifyAdmin(idToken);
+
+    await FirebaseAdminService.disableIAMaintenance(adminUid);
+
+    return res.json({ success: true, message: "IA maintenance disabled" });
+  } catch (error) {
+    console.error("Disable IA maintenance error:", error);
+    const message = error instanceof Error ? error.message : "Operation failed";
+    return res.status(401).json({ success: false, message });
+  }
+};
+
+// Enable License service maintenance
+export const handleEnableLicenseMaintenance: RequestHandler = async (
+  req,
+  res,
+) => {
+  try {
+    const idToken = extractIdToken(req.headers.authorization);
+    const adminUid = await FirebaseAdminService.verifyAdmin(idToken);
+
+    const { message } = z
+      .object({
+        message: z.string().optional(),
+      })
+      .parse(req.body);
+
+    await FirebaseAdminService.enableLicenseMaintenance(adminUid, message);
+
+    return res.json({ success: true, message: "License maintenance enabled" });
+  } catch (error) {
+    console.error("Enable license maintenance error:", error);
+    const status = error instanceof z.ZodError ? 400 : 401;
+    const message = error instanceof Error ? error.message : "Operation failed";
+    return res.status(status).json({ success: false, message });
+  }
+};
+
+// Disable License service maintenance
+export const handleDisableLicenseMaintenance: RequestHandler = async (
+  req,
+  res,
+) => {
+  try {
+    const idToken = extractIdToken(req.headers.authorization);
+    const adminUid = await FirebaseAdminService.verifyAdmin(idToken);
+
+    await FirebaseAdminService.disableLicenseMaintenance(adminUid);
+
+    return res.json({ success: true, message: "License maintenance disabled" });
+  } catch (error) {
+    console.error("Disable license maintenance error:", error);
+    const message = error instanceof Error ? error.message : "Operation failed";
+    return res.status(401).json({ success: false, message });
+  }
+};
+
+// Enable Planned maintenance
+export const handleEnablePlannedMaintenance: RequestHandler = async (
+  req,
+  res,
+) => {
+  try {
+    const idToken = extractIdToken(req.headers.authorization);
+    const adminUid = await FirebaseAdminService.verifyAdmin(idToken);
+
+    const { plannedTime, message } = z
+      .object({
+        plannedTime: z.string(),
+        message: z.string().optional(),
+      })
+      .parse(req.body);
+
+    await FirebaseAdminService.enablePlannedMaintenance(adminUid, plannedTime, message);
+
+    return res.json({ success: true, message: "Planned maintenance enabled" });
+  } catch (error) {
+    console.error("Enable planned maintenance error:", error);
+    const status = error instanceof z.ZodError ? 400 : 401;
+    const message = error instanceof Error ? error.message : "Operation failed";
+    return res.status(status).json({ success: false, message });
+  }
+};
+
+// Disable Planned maintenance
+export const handleDisablePlannedMaintenance: RequestHandler = async (
+  req,
+  res,
+) => {
+  try {
+    const idToken = extractIdToken(req.headers.authorization);
+    const adminUid = await FirebaseAdminService.verifyAdmin(idToken);
+
+    await FirebaseAdminService.disablePlannedMaintenance(adminUid);
+
+    return res.json({ success: true, message: "Planned maintenance disabled" });
+  } catch (error) {
+    console.error("Disable planned maintenance error:", error);
+    const message = error instanceof Error ? error.message : "Operation failed";
+    return res.status(401).json({ success: false, message });
+  }
+};
