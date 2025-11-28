@@ -79,23 +79,26 @@ export class AIService {
         }),
       });
 
-      // Read response as text first to avoid stream issues
-      let responseText: string;
-      try {
-        responseText = await response.text();
-      } catch (readError) {
-        console.error("Failed to read response:", readError);
-        throw new Error("Erreur serveur: impossible de lire la réponse");
-      }
-
-      // Parse JSON from text
+      // Try to read response as JSON directly, or arrayBuffer if stream is consumed
       let data: any;
+
       try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error("Failed to parse response JSON:", parseError);
-        console.error("Response was:", responseText.substring(0, 500));
-        throw new Error("Erreur serveur: réponse invalide");
+        // First try: direct JSON parsing
+        data = await response.json();
+      } catch (firstError) {
+        console.error("Failed to parse JSON directly:", firstError);
+
+        // Fallback: try to read as arrayBuffer and decode
+        try {
+          const buffer = await response.arrayBuffer();
+          const decoder = new TextDecoder();
+          const responseText = decoder.decode(buffer);
+          console.error("Response text:", responseText.substring(0, 500));
+          data = JSON.parse(responseText);
+        } catch (fallbackError) {
+          console.error("Failed with arrayBuffer fallback:", fallbackError);
+          throw new Error("Erreur serveur: réponse invalide");
+        }
       }
 
       // Check HTTP status
