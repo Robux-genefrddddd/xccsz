@@ -79,25 +79,26 @@ export class AIService {
         }),
       });
 
-      // Check if response is ok before reading body
-      let data: any;
+      // Read response as text first to avoid stream issues
+      let responseText: string;
       try {
-        // Try to parse as JSON directly
-        data = await response.json();
-      } catch (parseError) {
-        console.error("Failed to parse response JSON:", parseError);
-        // If JSON parsing fails, try to read as text for debugging
-        try {
-          const responseText = await response.clone().text();
-          console.error("Response was:", responseText.substring(0, 500));
-        } catch (textError) {
-          console.error("Could not read response as text:", textError);
-        }
-        throw new Error(
-          "Erreur serveur: réponse invalide",
-        );
+        responseText = await response.text();
+      } catch (readError) {
+        console.error("Failed to read response:", readError);
+        throw new Error("Erreur serveur: impossible de lire la réponse");
       }
 
+      // Parse JSON from text
+      let data: any;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Failed to parse response JSON:", parseError);
+        console.error("Response was:", responseText.substring(0, 500));
+        throw new Error("Erreur serveur: réponse invalide");
+      }
+
+      // Check HTTP status
       if (!response.ok) {
         const errorMessage = data?.error || `API error: ${response.status}`;
         throw new Error(errorMessage);
