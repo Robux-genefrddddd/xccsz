@@ -19,12 +19,17 @@ import {
   handleUnbanUser,
   handleResetMessages,
   handleDeleteUser,
+  handleUpdateUserPlan,
+  handleGetBannedUsers,
   handleGetLicenses,
   handleCreateLicense,
+  handleInvalidateLicense,
   handleGetAIConfig,
   handleUpdateAIConfig,
   handleGetSystemStats,
   handlePurgeLicenses,
+  handleGetAdminLogs,
+  handleClearOldLogs,
 } from "./routes/admin";
 import {
   handleCheckIPBan,
