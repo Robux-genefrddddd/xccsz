@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { auth } from "@/lib/firebase";
 import { UserData } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -26,9 +26,17 @@ export default function AdminUsersSection() {
   } | null>(null);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    loadUsers();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    loadUsers(controller.signal);
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   const loadUsers = async () => {
