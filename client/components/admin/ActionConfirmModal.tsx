@@ -1,8 +1,9 @@
 import { Loader2, AlertCircle } from "lucide-react";
 
 interface ActionConfirmModalProps {
-  type: "promote" | "demote" | "ban" | "unban" | "reset" | "delete";
+  type: "promote" | "demote" | "ban" | "unban" | "reset" | "delete" | "plan";
   email: string;
+  plan?: "Free" | "Classic" | "Pro";
   onConfirm: () => void;
   onCancel: () => void;
   isLoading: boolean;
