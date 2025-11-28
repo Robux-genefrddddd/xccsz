@@ -27,6 +27,10 @@ export interface UserData {
   messagesLimit: number;
   createdAt: number;
   isAdmin: boolean;
+  isBanned?: boolean;
+  bannedAt?: number;
+  bannedBy?: string;
+  banReason?: string;
   licenseKey?: string;
   licenseExpiresAt?: number;
   lastMessageReset?: number;

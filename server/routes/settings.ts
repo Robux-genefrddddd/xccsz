@@ -7,6 +7,15 @@ initializeFirebaseAdmin();
 export const handleGetAIConfig: RequestHandler = async (req, res) => {
   try {
     const db = getAdminDb();
+
+    if (!db) {
+      return res.json({
+        model: "x-ai/grok-4.1-fast:free",
+        temperature: 0.7,
+        maxTokens: 2048,
+      });
+    }
+
     const configSnap = await db.collection("settings").doc("ai_config").get();
 
     const config = configSnap.exists

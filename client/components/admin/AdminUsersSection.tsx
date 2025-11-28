@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { auth } from "@/lib/firebase";
 import { UserData } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -26,12 +26,20 @@ export default function AdminUsersSection() {
   } | null>(null);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    loadUsers();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    loadUsers(controller.signal);
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
-  const loadUsers = async () => {
+  const loadUsers = async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       setError(null);
@@ -41,6 +49,7 @@ export default function AdminUsersSection() {
       const idToken = await currentUser.getIdToken();
       const response = await fetch("/api/admin/users", {
         headers: { Authorization: `Bearer ${idToken}` },
+        signal,
       });
 
       const data = await response.json();
@@ -55,6 +64,12 @@ export default function AdminUsersSection() {
 
       setUsers(data.users || []);
     } catch (error) {
+      // Don't show error if request was aborted (component unmounted)
+      if (error instanceof Error && error.name === "AbortError") {
+        console.log("Users request was cancelled");
+        return;
+      }
+
       const errorMsg =
         error instanceof Error ? error.message : "Erreur lors du chargement";
       setError(errorMsg);
@@ -130,6 +145,10 @@ export default function AdminUsersSection() {
               return { ...u, isAdmin: true };
             case "demote":
               return { ...u, isAdmin: false };
+            case "ban":
+              return { ...u, isBanned: true as any };
+            case "unban":
+              return { ...u, isBanned: false as any };
             case "reset":
               return { ...u, messagesUsed: 0 };
             case "plan":
@@ -204,7 +223,11 @@ export default function AdminUsersSection() {
             <div>
               <p className="text-sm font-medium text-red-300">{error}</p>
               <button
-                onClick={loadUsers}
+                onClick={() => {
+                  const controller = new AbortController();
+                  abortControllerRef.current = controller;
+                  loadUsers(controller.signal);
+                }}
                 className="text-xs text-red-300/70 hover:text-red-300 mt-2 underline"
               >
                 Réessayer
@@ -432,6 +455,7 @@ export default function AdminUsersSection() {
         <ActionConfirmModal
           type={confirmAction.type}
           email={confirmAction.email}
+          plan={confirmAction.plan}
           onConfirm={executeAction}
           onCancel={() => setConfirmAction(null)}
           isLoading={actionLoading === confirmAction.userId}

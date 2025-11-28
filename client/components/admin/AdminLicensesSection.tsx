@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { auth } from "@/lib/firebase";
 import { toast } from "sonner";
 import { Loader2, Plus, Copy, X, Check, AlertCircle } from "lucide-react";
@@ -16,6 +16,7 @@ export default function AdminLicensesSection() {
   const [licenses, setLicenses] = useState<License[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generatingLicense, setGeneratingLicense] = useState(false);
   const [planToGenerate, setPlanToGenerate] = useState<
@@ -25,10 +26,17 @@ export default function AdminLicensesSection() {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   useEffect(() => {
-    loadLicenses();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    loadLicenses(controller.signal);
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
-  const loadLicenses = async () => {
+  const loadLicenses = async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       setError(null);
@@ -38,6 +46,7 @@ export default function AdminLicensesSection() {
       const idToken = await currentUser.getIdToken();
       const response = await fetch("/api/admin/licenses", {
         headers: { Authorization: `Bearer ${idToken}` },
+        signal,
       });
 
       const data = await response.json();
@@ -52,6 +61,12 @@ export default function AdminLicensesSection() {
 
       setLicenses(data.licenses || []);
     } catch (error) {
+      // Don't show error if request was aborted (component unmounted)
+      if (error instanceof Error && error.name === "AbortError") {
+        console.log("Licenses request was cancelled");
+        return;
+      }
+
       const errorMsg =
         error instanceof Error ? error.message : "Erreur de chargement";
       setError(errorMsg);

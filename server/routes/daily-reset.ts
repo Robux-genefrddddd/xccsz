@@ -12,6 +12,13 @@ export async function handleDailyReset(req: Request, res: Response) {
 
     // Verify authentication
     const auth = getAdminAuth();
+
+    if (!auth) {
+      return res.status(503).json({
+        error: "Service temporarily unavailable. Firebase not initialized.",
+      });
+    }
+
     let decoded;
     try {
       decoded = await auth.verifyIdToken(idToken);
@@ -37,6 +44,13 @@ export async function handleDailyReset(req: Request, res: Response) {
 
     // Get user data
     const db = getAdminDb();
+
+    if (!db) {
+      return res.status(503).json({
+        error: "Service temporarily unavailable. Firebase not initialized.",
+      });
+    }
+
     const userDocRef = db.collection("users").doc(userId);
     const userDocSnap = await userDocRef.get();
 
