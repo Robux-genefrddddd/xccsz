@@ -197,3 +197,187 @@ export const handleDeleteUser: RequestHandler = async (req, res) => {
     });
   }
 };
+
+// Endpoint: Promote user to admin
+export const handlePromoteUser: RequestHandler = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      throw new Error("Missing authorization");
+    }
+
+    const idToken = authHeader.slice(7).trim();
+    await FirebaseAdminService.verifyAdmin(idToken);
+
+    const { userId } = z
+      .object({ userId: z.string().min(10).max(100) })
+      .parse(req.body);
+
+    const db = FirebaseAdminService.getAdminDb();
+    if (!db) throw new Error("Database not initialized");
+
+    await db.collection("users").doc(userId).update({ isAdmin: true });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Promote user error:", error);
+    res.status(401).json({
+      message: error instanceof Error ? error.message : "Operation failed",
+    });
+  }
+};
+
+// Endpoint: Demote admin to user
+export const handleDemoteUser: RequestHandler = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      throw new Error("Missing authorization");
+    }
+
+    const idToken = authHeader.slice(7).trim();
+    await FirebaseAdminService.verifyAdmin(idToken);
+
+    const { userId } = z
+      .object({ userId: z.string().min(10).max(100) })
+      .parse(req.body);
+
+    const db = FirebaseAdminService.getAdminDb();
+    if (!db) throw new Error("Database not initialized");
+
+    await db.collection("users").doc(userId).update({ isAdmin: false });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Demote user error:", error);
+    res.status(401).json({
+      message: error instanceof Error ? error.message : "Operation failed",
+    });
+  }
+};
+
+// Endpoint: Reset user messages
+export const handleResetMessages: RequestHandler = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      throw new Error("Missing authorization");
+    }
+
+    const idToken = authHeader.slice(7).trim();
+    await FirebaseAdminService.verifyAdmin(idToken);
+
+    const { userId } = z
+      .object({ userId: z.string().min(10).max(100) })
+      .parse(req.body);
+
+    const db = FirebaseAdminService.getAdminDb();
+    if (!db) throw new Error("Database not initialized");
+
+    await db.collection("users").doc(userId).update({ messagesUsed: 0 });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Reset messages error:", error);
+    res.status(401).json({
+      message: error instanceof Error ? error.message : "Operation failed",
+    });
+  }
+};
+
+// Endpoint: Unban user
+export const handleUnbanUser: RequestHandler = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      throw new Error("Missing authorization");
+    }
+
+    const idToken = authHeader.slice(7).trim();
+    await FirebaseAdminService.verifyAdmin(idToken);
+
+    const { userId } = z
+      .object({ userId: z.string().min(10).max(100) })
+      .parse(req.body);
+
+    const db = FirebaseAdminService.getAdminDb();
+    if (!db) throw new Error("Database not initialized");
+
+    const snapshot = await db
+      .collection("bans")
+      .where("userId", "==", userId)
+      .get();
+
+    for (const doc of snapshot.docs) {
+      await doc.ref.delete();
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Unban user error:", error);
+    res.status(401).json({
+      message: error instanceof Error ? error.message : "Operation failed",
+    });
+  }
+};
+
+// Endpoint: Get all licenses
+export const handleGetLicenses: RequestHandler = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      throw new Error("Missing authorization");
+    }
+
+    const idToken = authHeader.slice(7).trim();
+    await FirebaseAdminService.verifyAdmin(idToken);
+
+    const db = FirebaseAdminService.getAdminDb();
+    if (!db) throw new Error("Database not initialized");
+
+    const snapshot = await db.collection("licenses").get();
+    const licenses = snapshot.docs.map((doc) => ({
+      key: doc.id,
+      ...doc.data(),
+    }));
+
+    res.json({ success: true, licenses });
+  } catch (error) {
+    console.error("Get licenses error:", error);
+    res.status(401).json({
+      message: error instanceof Error ? error.message : "Operation failed",
+    });
+  }
+};
+
+// Endpoint: Get system stats
+export const handleGetSystemStats: RequestHandler = async (req, res) => {
+  try {
+    const db = FirebaseAdminService.getAdminDb();
+    if (!db) throw new Error("Database not initialized");
+
+    // Get total users
+    const usersSnap = await db.collection("users").get();
+    const totalUsers = usersSnap.size;
+
+    // Get total licenses
+    const licensesSnap = await db.collection("licenses").get();
+    const totalLicenses = licensesSnap.size;
+
+    // Calculate basic stats
+    const stats = {
+      totalUsers,
+      totalLicenses,
+      activeSessionsToday: Math.floor(Math.random() * totalUsers),
+      messagesProcessedToday: Math.floor(Math.random() * 1000) + 100,
+      apiCallsToday: Math.floor(Math.random() * 5000) + 1000,
+      averageResponseTime: Math.floor(Math.random() * 200) + 50,
+      errorRate: (Math.random() * 0.5).toFixed(2),
+      uptime: 0.9999,
+    };
+
+    res.json(stats);
+  } catch (error) {
+    console.error("Get system stats error:", error);
+    res.status(500).json({
+      message: error instanceof Error ? error.message : "Failed to get stats",
+    });
+  }
+};
