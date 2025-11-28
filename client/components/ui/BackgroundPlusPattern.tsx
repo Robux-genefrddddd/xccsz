@@ -6,15 +6,13 @@ export function BackgroundPlusPattern() {
     <div
       className="fixed inset-0 -z-20 pointer-events-none overflow-hidden"
       style={{
-        backgroundColor: '#090909',
+        backgroundColor: "#090909",
         backgroundImage: `url("${svgPattern}")`,
-        backgroundSize: '40px 40px',
-        backgroundPosition: '0 0',
-        backgroundRepeat: 'repeat',
-        backgroundAttachment: 'fixed',
+        backgroundSize: "40px 40px",
+        backgroundPosition: "0 0",
+        backgroundRepeat: "repeat",
+        backgroundAttachment: "fixed",
       }}
-    >
-
-    </div>
+    ></div>
   );
 }
