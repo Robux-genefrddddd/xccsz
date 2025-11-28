@@ -1,25 +1,25 @@
 import { useState, useEffect } from "react";
 import { auth } from "@/lib/firebase";
 import { toast } from "sonner";
-import { Loader2, Plus, Copy, X, Check } from "lucide-react";
+import { Loader2, Plus, Copy, X, Check, AlertCircle } from "lucide-react";
 
 interface License {
   key: string;
   plan: string;
-  createdAt: string;
+  createdAt: any;
   usedBy?: string;
-  usedAt?: string;
+  usedAt?: any;
   valid: boolean;
 }
 
 export default function AdminLicensesSection() {
   const [licenses, setLicenses] = useState<License[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generatingLicense, setGeneratingLicense] = useState(false);
-  const [planToGenerate, setPlanToGenerate] = useState<
-    "Free" | "Classic" | "Pro"
-  >("Pro");
+  const [planToGenerate, setPlanToGenerate] = useState<"Free" | "Classic" | "Pro">("Pro");
+  const [validityDays, setValidityDays] = useState(365);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -29,29 +29,31 @@ export default function AdminLicensesSection() {
   const loadLicenses = async () => {
     try {
       setLoading(true);
+      setError(null);
       const currentUser = auth.currentUser;
-      if (!currentUser) throw new Error("Not authenticated");
+      if (!currentUser) throw new Error("Non authentifié");
 
       const idToken = await currentUser.getIdToken();
       const response = await fetch("/api/admin/licenses", {
         headers: { Authorization: `Bearer ${idToken}` },
       });
 
-      let data;
-      try {
-        data = await response.json();
-      } catch {
-        throw new Error("Invalid response");
-      }
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to load licenses");
+        throw new Error(data.message || data.error || "Erreur serveur");
+      }
+
+      if (!data.success || !data.licenses) {
+        throw new Error("Format de réponse invalide");
       }
 
       setLicenses(data.licenses || []);
     } catch (error) {
-      toast.error("Erreur lors du chargement des licences");
-      console.error("Error:", error);
+      const errorMsg =
+        error instanceof Error ? error.message : "Erreur de chargement";
+      setError(errorMsg);
+      console.error("Error loading licenses:", error);
     } finally {
       setLoading(false);
     }
@@ -61,7 +63,7 @@ export default function AdminLicensesSection() {
     try {
       setGeneratingLicense(true);
       const currentUser = auth.currentUser;
-      if (!currentUser) throw new Error("Not authenticated");
+      if (!currentUser) throw new Error("Non authentifié");
 
       const idToken = await currentUser.getIdToken();
       const response = await fetch("/api/admin/create-license", {
@@ -72,28 +74,28 @@ export default function AdminLicensesSection() {
         },
         body: JSON.stringify({
           plan: planToGenerate,
-          validityDays: 365,
+          validityDays,
         }),
       });
 
-      let data;
-      try {
-        data = await response.json();
-      } catch {
-        throw new Error("Invalid response");
-      }
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to generate license");
+        throw new Error(data.message || data.error || "Erreur de création");
+      }
+
+      if (!data.success || !data.license) {
+        throw new Error("Réponse invalide du serveur");
       }
 
       setLicenses((prev) => [data.license, ...prev]);
       toast.success("Licence générée avec succès");
       setShowGenerateModal(false);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Erreur lors de la génération",
-      );
+      const errorMsg =
+        error instanceof Error ? error.message : "Erreur de création";
+      toast.error(errorMsg);
+      console.error("Error generating license:", error);
     } finally {
       setGeneratingLicense(false);
     }
@@ -115,7 +117,6 @@ export default function AdminLicensesSection() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-white">
@@ -134,7 +135,23 @@ export default function AdminLicensesSection() {
         </button>
       </div>
 
-      {/* Table */}
+      {error && (
+        <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle size={20} className="text-red-400 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-red-300">{error}</p>
+              <button
+                onClick={loadLicenses}
+                className="text-xs text-red-300/70 hover:text-red-300 mt-2 underline"
+              >
+                Réessayer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-lg border border-white/5 overflow-hidden bg-white/[0.02]">
         <table className="w-full text-sm">
           <thead className="bg-white/[0.05] border-b border-white/5">
@@ -224,7 +241,6 @@ export default function AdminLicensesSection() {
         )}
       </div>
 
-      {/* Generate Modal */}
       {showGenerateModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#1a1a1a] border border-white/10 rounded-lg max-w-md w-full">
@@ -242,12 +258,28 @@ export default function AdminLicensesSection() {
                 <select
                   value={planToGenerate}
                   onChange={(e) => setPlanToGenerate(e.target.value as any)}
+                  disabled={generatingLicense}
                   className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white hover:border-white/20 transition-colors focus:outline-none focus:border-white/30"
                 >
                   <option value="Free">Free</option>
                   <option value="Classic">Classic</option>
                   <option value="Pro">Pro</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground/80 mb-2">
+                  Validité (jours): {validityDays}
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="3650"
+                  value={validityDays}
+                  onChange={(e) => setValidityDays(parseInt(e.target.value))}
+                  disabled={generatingLicense}
+                  className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                />
               </div>
             </div>
 
