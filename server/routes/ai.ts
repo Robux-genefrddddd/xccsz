@@ -179,15 +179,20 @@ export const handleAIChat: RequestHandler = async (req, res) => {
       // Log but don't fail the response - user got their answer
     }
 
-    // Set explicit headers to prevent proxy issues
-    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.set("Content-Type", "application/json");
-
-    return res.json({
+    // Prepare response
+    const responseData = {
       content,
       messagesUsed: messagesUsed + 1,
       messagesLimit,
-    });
+    };
+
+    // Set explicit headers to prevent proxy issues
+    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.set("Content-Type", "application/json; charset=utf-8");
+    res.set("Content-Length", JSON.stringify(responseData).length.toString());
+
+    // Send response
+    return res.status(200).json(responseData);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
