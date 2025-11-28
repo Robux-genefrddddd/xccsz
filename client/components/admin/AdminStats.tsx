@@ -1,28 +1,42 @@
-import { Users, Crown, Zap, AlertCircle, TrendingUp, Clock } from "lucide-react";
+import { useEffect, useState } from "react";
+import { auth } from "@/lib/firebase";
+import { Loader2 } from "lucide-react";
 import { dsClasses } from "@/lib/design-system";
+
+interface SystemStats {
+  totalUsers: number;
+  totalAdmins: number;
+  bannedUsers: number;
+  activeLicenses: number;
+  systemHealth: string;
+  uptime: number;
+  avgLatency: number;
+  storage: {
+    used: number;
+    total: number;
+  };
+}
 
 interface StatCardProps {
   title: string;
   value: string | number;
   change?: string;
   trend?: "up" | "down" | "neutral";
-  icon: React.ReactNode;
   lastUpdated?: string;
 }
 
-function StatCard({ title, value, change, trend, icon, lastUpdated }: StatCardProps) {
+function StatCard({ title, value, change, trend, lastUpdated }: StatCardProps) {
   return (
     <div className={`${dsClasses.card} p-6 flex flex-col gap-3 group hover:border-white/10 transition-all duration-200`}>
       <div className="flex items-center justify-between">
         <p className="text-white/70 text-13px font-medium uppercase tracking-wide">{title}</p>
-        <div className="text-white/40 group-hover:text-white/60 transition-colors">{icon}</div>
       </div>
       
       <div className="flex items-end gap-2">
         <span className="text-3xl font-bold text-white">{value}</span>
         {change && (
           <div
-            className={`text-12px font-medium px-2 py-1 rounded-md flex items-center gap-1 ${
+            className={`text-12px font-medium px-2 py-1 rounded-md ${
               trend === "up"
                 ? "bg-emerald-500/15 text-emerald-400"
                 : trend === "down"
@@ -30,15 +44,13 @@ function StatCard({ title, value, change, trend, icon, lastUpdated }: StatCardPr
                   : "bg-gray-500/15 text-gray-400"
             }`}
           >
-            <TrendingUp size={12} />
             {change}
           </div>
         )}
       </div>
 
       {lastUpdated && (
-        <p className="text-11px text-white/40 flex items-center gap-1 mt-auto">
-          <Clock size={11} />
+        <p className="text-11px text-white/40 mt-auto">
           {lastUpdated}
         </p>
       )}
@@ -47,12 +59,56 @@ function StatCard({ title, value, change, trend, icon, lastUpdated }: StatCardPr
 }
 
 export default function AdminStats() {
-  const now = new Date();
-  const lastHour = new Date(now.getTime() - 60 * 60 * 1000);
+  const [stats, setStats] = useState<SystemStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        const currentUser = auth.currentUser;
+        if (!currentUser) throw new Error("Non authentifié");
+
+        const idToken = await currentUser.getIdToken();
+        const response = await fetch("/api/admin/system-stats", {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+
+        if (!response.ok) throw new Error("Erreur lors du chargement");
+
+        const data = await response.json();
+        if (data.success) {
+          setStats(data.stats);
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+    const interval = setInterval(fetchStats, 60000); // Refresh toutes les minutes
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 size={20} className="animate-spin text-white/60" />
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return <div className="text-white/60 text-14px">Impossible de charger les statistiques</div>;
+  }
+
+  const storagePercent = Math.round((stats.storage.used / stats.storage.total) * 100);
 
   return (
     <div className="space-y-6">
-      {/* Header with description */}
+      {/* Header */}
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-white">Tableau de bord</h2>
         <p className="text-white/60 text-14px">
@@ -60,82 +116,72 @@ export default function AdminStats() {
         </p>
       </div>
 
-      {/* Main stats grid - Asymmetrical layout */}
+      {/* Main stats grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Utilisateurs totaux"
-          value="412"
-          change="+8 cette semaine"
-          trend="up"
-          icon={<Users size={18} />}
-          lastUpdated="À l'instant"
+          value={stats.totalUsers}
+          lastUpdated="Mise à jour en temps réel"
         />
         <StatCard
           title="Administrateurs"
-          value="3"
-          change="Inchangé"
-          trend="neutral"
-          icon={<Crown size={18} />}
-          lastUpdated="À l'instant"
+          value={stats.totalAdmins}
+          lastUpdated="Mise à jour en temps réel"
         />
         <StatCard
           title="Licences actives"
-          value="156"
-          change="+12 cette semaine"
-          trend="up"
-          icon={<Zap size={18} />}
-          lastUpdated="À l'instant"
+          value={stats.activeLicenses}
+          lastUpdated="Mise à jour en temps réel"
         />
         <StatCard
           title="Utilisateurs bannis"
-          value="2"
-          change="Stable"
-          trend="neutral"
-          icon={<AlertCircle size={18} />}
-          lastUpdated="À l'instant"
+          value={stats.bannedUsers}
+          lastUpdated="Mise à jour en temps réel"
         />
       </div>
 
-      {/* Secondary metrics - Compact layout */}
+      {/* Secondary metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className={`${dsClasses.card} p-4 space-y-3`}>
           <div className="flex items-center justify-between">
-            <span className="text-white/70 text-12px font-medium uppercase">Utilisation IA</span>
-            <span className="text-emerald-400 text-12px font-semibold">68%</span>
+            <span className="text-white/70 text-12px font-medium uppercase">Santé système</span>
+            <span className={`text-12px font-semibold ${stats.systemHealth === "Optimal" ? "text-emerald-400" : "text-amber-400"}`}>
+              {stats.systemHealth}
+            </span>
           </div>
-          <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden">
-            <div
-              className="bg-gradient-to-r from-emerald-500/60 to-emerald-400/40 h-full transition-all duration-300"
-              style={{ width: "68%" }}
-            />
-          </div>
-          <p className="text-11px text-white/40">2,847 appels cette semaine</p>
+          <p className="text-12px text-white/70">Uptime: {stats.uptime.toFixed(2)}% • Latence: {stats.avgLatency}ms</p>
+          <p className="text-11px text-white/40">Statut optimal</p>
         </div>
 
         <div className={`${dsClasses.card} p-4 space-y-3`}>
           <div className="flex items-center justify-between">
-            <span className="text-white/70 text-12px font-medium uppercase">Santé système</span>
-            <span className="inline-flex items-center gap-1 text-emerald-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-12px font-semibold">Optimal</span>
-            </span>
+            <span className="text-white/70 text-12px font-medium uppercase">Requêtes API</span>
+            <span className="text-emerald-400 text-12px font-semibold">Actif</span>
           </div>
-          <p className="text-12px text-white/70">Uptime: 99.94% • Latence: 42ms</p>
-          <p className="text-11px text-white/40">Dernier incident: il y a 8 jours</p>
+          <p className="text-12px text-white/70">Performance: Normal</p>
+          <p className="text-11px text-white/40">Aucune alerte</p>
         </div>
 
         <div className={`${dsClasses.card} p-4 space-y-3`}>
           <div className="flex items-center justify-between">
             <span className="text-white/70 text-12px font-medium uppercase">Stockage</span>
-            <span className="text-amber-400 text-12px font-semibold">42%</span>
+            <span className={`text-12px font-semibold ${storagePercent > 80 ? "text-amber-400" : "text-emerald-400"}`}>
+              {storagePercent}%
+            </span>
           </div>
           <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-amber-500/60 to-amber-400/40 h-full transition-all duration-300"
-              style={{ width: "42%" }}
+              className={`h-full transition-all duration-300 ${
+                storagePercent > 80
+                  ? "bg-gradient-to-r from-amber-500/60 to-amber-400/40"
+                  : "bg-gradient-to-r from-emerald-500/60 to-emerald-400/40"
+              }`}
+              style={{ width: `${storagePercent}%` }}
             />
           </div>
-          <p className="text-11px text-white/40">84 GB utilisés / 200 GB disponibles</p>
+          <p className="text-11px text-white/40">
+            {stats.storage.used} GB / {stats.storage.total} GB
+          </p>
         </div>
       </div>
     </div>
