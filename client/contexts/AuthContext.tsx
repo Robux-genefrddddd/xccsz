@@ -70,6 +70,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [maintenanceNotice, setMaintenanceNotice] =
     useState<MaintenanceNotice | null>(null);
 
+  // Real-time listener for maintenance notices
+  useEffect(() => {
+    let isMounted = true;
+
+    const maintenanceQuery = query(
+      collection(db, "maintenance_notices"),
+      where("isActive", "==", true),
+    );
+
+    const unsubscribeMaintenance = onSnapshot(
+      maintenanceQuery,
+      (snapshot) => {
+        if (!isMounted) return;
+
+        if (snapshot.empty) {
+          setMaintenanceNotice(null);
+        } else {
+          const noticeDoc = snapshot.docs[0];
+          const notice = {
+            id: noticeDoc.id,
+            ...noticeDoc.data(),
+          } as MaintenanceNotice;
+
+          // Check if maintenance has expired
+          if (notice.endTime && notice.endTime.toDate() < new Date()) {
+            setMaintenanceNotice(null);
+          } else {
+            setMaintenanceNotice(notice);
+          }
+        }
+      },
+      (error) => {
+        console.error("Error listening to maintenance notices:", error);
+      },
+    );
+
+    return () => {
+      isMounted = false;
+      unsubscribeMaintenance();
+    };
+  }, []);
+
+  // Auth state listener
   useEffect(() => {
     let isMounted = true;
 
@@ -85,41 +128,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (isMounted) {
             setUserBan(ban);
           }
-
-          // Set up real-time listener for active maintenance
-          const maintenanceQuery = query(
-            collection(db, "maintenance_notices"),
-            where("isActive", "==", true),
-          );
-
-          const unsubscribeMaintenance = onSnapshot(
-            maintenanceQuery,
-            (snapshot) => {
-              if (!isMounted) return;
-
-              if (snapshot.empty) {
-                setMaintenanceNotice(null);
-              } else {
-                const noticeDoc = snapshot.docs[0];
-                const notice = {
-                  id: noticeDoc.id,
-                  ...noticeDoc.data(),
-                } as MaintenanceNotice;
-
-                // Check if maintenance has expired
-                if (notice.endTime && notice.endTime.toDate() < new Date()) {
-                  setMaintenanceNotice(null);
-                } else {
-                  setMaintenanceNotice(notice);
-                }
-              }
-            },
-            (error) => {
-              console.error("Error listening to maintenance notices:", error);
-            },
-          );
-
-          return unsubscribeMaintenance;
 
           const userDocRef = doc(db, "users", authUser.uid);
           const userDocSnap = await getDoc(userDocRef);
