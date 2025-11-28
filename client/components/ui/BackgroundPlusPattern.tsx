@@ -1,6 +1,30 @@
+import { useState, useEffect } from 'react';
+
 export function BackgroundPlusPattern() {
-  // Premium SVG pattern with layered crosses for depth and variation
-  const svgPattern = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><text x='20' y='20' text-anchor='middle' dominant-baseline='central' fill='rgba(255,255,255,0.15)' font-size='14' font-weight='600'>+</text><text x='20' y='20' text-anchor='middle' dominant-baseline='central' fill='rgba(255,255,255,0.05)' font-size='14' font-weight='600'>+</text></svg>`;
+  // Premium SVG pattern with subtle base opacity
+  const svgPattern = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><text x='20' y='20' text-anchor='middle' dominant-baseline='central' fill='rgba(255,255,255,0.035)' font-size='14' font-weight='600'>+</text></svg>`;
+
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [glowOpacity, setGlowOpacity] = useState(0);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+      setGlowOpacity(0.04);
+    };
+
+    const handleMouseLeave = () => {
+      setGlowOpacity(0);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, []);
 
   return (
     <div
@@ -25,7 +49,23 @@ export function BackgroundPlusPattern() {
           pointerEvents: 'none',
         }}
       />
-      
+
+      {/* Ultra-subtle glow effect on mouse movement */}
+      <div
+        className="absolute pointer-events-none transition-opacity"
+        style={{
+          left: mousePos.x,
+          top: mousePos.y,
+          width: '80px',
+          height: '80px',
+          transform: 'translate(-50%, -50%)',
+          background: `radial-gradient(circle, rgba(255,255,255,${glowOpacity}), transparent 70%)`,
+          opacity: glowOpacity,
+          transitionDuration: '0.25s',
+          transitionTimingFunction: 'ease-out',
+        }}
+      />
+
       {/* Ultra-subtle noise/grain texture layer */}
       <div
         className="absolute inset-0 opacity-[0.01]"
