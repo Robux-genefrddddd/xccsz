@@ -102,8 +102,13 @@ export class AIService {
       } catch (readError) {
         console.error("Failed to read response body:", readError);
         // Try to provide more info
-        if (readError instanceof TypeError && readError.message.includes("body stream already read")) {
-          console.warn("Response body was already consumed - possible middleware interference");
+        if (
+          readError instanceof TypeError &&
+          readError.message.includes("body stream already read")
+        ) {
+          console.warn(
+            "Response body was already consumed - possible middleware interference",
+          );
         }
         throw new Error("Erreur serveur: impossible de lire la réponse");
       }
