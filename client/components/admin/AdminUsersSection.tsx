@@ -60,10 +60,28 @@ export default function AdminUsersSection() {
         signal,
       });
 
-      const data = await response.json();
-
+      // Check response status before reading body
       if (!response.ok) {
-        throw new Error(data.message || data.error || "Erreur serveur");
+        let errorMessage = "Erreur serveur";
+        try {
+          const errorData = await response.json();
+          errorMessage =
+            errorData.message || errorData.error || errorMessage;
+        } catch {
+          // If we can't parse error details, use the status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      // Parse successful response
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        throw new Error(
+          "Impossible de traiter la réponse du serveur. Format invalide.",
+        );
       }
 
       if (!data.success || !data.users) {
