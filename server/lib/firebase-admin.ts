@@ -49,6 +49,11 @@ export function isAdminInitialized(): boolean {
 }
 
 export class FirebaseAdminService {
+  // Get admin database
+  static getAdminDb() {
+    return adminDb;
+  }
+
   // Verify admin status
   static async verifyAdmin(idToken: string): Promise<string> {
     const auth = getAdminAuth();
