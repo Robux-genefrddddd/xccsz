@@ -64,28 +64,54 @@ export class AIService {
         throw new Error("Not authenticated. Please log in again.");
       }
 
-      const response = await fetch("/api/ai/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          idToken,
-          userMessage,
-          conversationHistory,
-          model: config.model,
-          temperature: config.temperature,
-          maxTokens: config.maxTokens,
-        }),
-      });
+      let response: Response;
+      try {
+        response = await fetch("/api/ai/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            idToken,
+            userMessage,
+            conversationHistory,
+            model: config.model,
+            temperature: config.temperature,
+            maxTokens: config.maxTokens,
+          }),
+        });
+      } catch (fetchError) {
+        console.error("Fetch request failed:", fetchError);
+        throw new Error("Erreur réseau: impossible de contacter le serveur");
+      }
 
-      // Read response body only once to avoid stream consumption issues
+      // Check if response exists and has a body
+      if (!response || !response.body) {
+        console.error("Response has no body");
+        throw new Error("Erreur serveur: pas de réponse");
+      }
+
+      // Read response status first (doesn't consume body)
+      const status = response.status;
+      const ok = response.ok;
+
+      // Now read the body
       let responseText: string;
       try {
         responseText = await response.text();
       } catch (readError) {
         console.error("Failed to read response body:", readError);
+        // Try to provide more info
+        if (readError instanceof TypeError && readError.message.includes("body stream already read")) {
+          console.warn("Response body was already consumed - possible middleware interference");
+        }
         throw new Error("Erreur serveur: impossible de lire la réponse");
+      }
+
+      // Validate we got some response
+      if (!responseText) {
+        console.error("Response text is empty");
+        throw new Error("Erreur serveur: réponse vide");
       }
 
       // Parse JSON from text
@@ -99,8 +125,8 @@ export class AIService {
       }
 
       // Check HTTP status
-      if (!response.ok) {
-        const errorMessage = data?.error || `API error: ${response.status}`;
+      if (!ok) {
+        const errorMessage = data?.error || `API error: ${status}`;
         throw new Error(errorMessage);
       }
 
